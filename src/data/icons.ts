@@ -1,4 +1,4 @@
-/** Inline SVG markup keyed by icon name, referenced from PALETTE + templates. */
+/** Inline SVG markup keyed by icon name, referenced from palette + templates. */
 export const ICONS: Record<string, string> = {
   client: `<svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
   mobile: `<svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>`,

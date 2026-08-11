@@ -6,43 +6,7 @@
   <title>System Design Canvas</title>
 </head>
 <body>
-  <header>
-    <h1>🧩 System Design Canvas</h1>
-    <span class="hint">Drag components in · drag the green dot to connect · double-click a label to rename</span>
-    <div class="spacer"></div>
-    <select id="tpl-select" title="Load a template">
-      <option value="">Templates…</option>
-      <option value="url">URL Shortener</option>
-      <option value="chat">Chat App</option>
-      <option value="feed">News Feed</option>
-    </select>
-    <button id="btn-region">+ Region</button>
-    <button id="btn-edgestyle">Edges: Curved</button>
-    <button id="btn-export">Export JSON</button>
-    <button id="btn-import">Import</button>
-    <button class="danger" id="btn-clear">Clear</button>
-    <input type="file" id="file-input" accept="application/json" hidden />
-  </header>
-
-  <div class="layout">
-    <aside class="palette" id="palette"></aside>
-    <div class="canvas-wrap">
-      <div id="canvas">
-        <svg class="edges" id="edges">
-          <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M0,0 L10,5 L0,10 z" fill="#5b6b8c" />
-            </marker>
-          </defs>
-        </svg>
-        <div class="empty-state" id="empty">
-          <div class="big">🖱️</div>
-          Drag a component from the left onto the canvas<br />to start designing your system
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script type="module" src="/src/main.ts"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>

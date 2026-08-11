@@ -1,9 +1,6 @@
-import { ICONS } from './icons';
-import { canvas } from './state';
-import { createNode } from './nodes';
-import type { NodeDef } from './types';
+import type { NodeDef } from '../types';
 
-interface PaletteSection {
+export interface PaletteSection {
   group: string;
   items: NodeDef[];
 }
@@ -42,31 +39,3 @@ export const PALETTE: PaletteSection[] = [
     { key: 'monitor', label: 'Monitoring', icon: 'monitor' },
   ] },
 ];
-
-export function buildPalette(): void {
-  const paletteEl = document.getElementById('palette')!;
-  PALETTE.forEach((sec) => {
-    const h = document.createElement('h2');
-    h.textContent = sec.group;
-    paletteEl.appendChild(h);
-    sec.items.forEach((it) => {
-      const d = document.createElement('div');
-      d.className = 'pal-item';
-      d.draggable = true;
-      d.innerHTML = `<span class="ico">${ICONS[it.icon]}</span><span>${it.label}</span>`;
-      d.addEventListener('dragstart', (e) => e.dataTransfer!.setData('text/plain', JSON.stringify(it)));
-      paletteEl.appendChild(d);
-    });
-  });
-}
-
-export function initDrop(): void {
-  canvas.addEventListener('dragover', (e) => e.preventDefault());
-  canvas.addEventListener('drop', (e) => {
-    e.preventDefault();
-    let data: NodeDef;
-    try { data = JSON.parse(e.dataTransfer!.getData('text/plain')); } catch { return; }
-    const r = canvas.getBoundingClientRect();
-    createNode(data, e.clientX - r.left - 48, e.clientY - r.top - 32);
-  });
-}

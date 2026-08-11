@@ -1,8 +1,4 @@
-import { createNode, deleteNode } from './nodes';
-import { createEdge } from './edges';
-import { createRegion, deleteRegion } from './regions';
-import { nodes, regions, ids } from './state';
-import type { Region } from './types';
+import type { GraphData, GraphNode, Region } from '../types';
 
 interface TplNode { key: string; icon: string; label: string; x: number; y: number; }
 interface Tpl {
@@ -11,7 +7,15 @@ interface Tpl {
   regions: Array<Partial<Region>>;
 }
 
-export const TEMPLATES: Record<string, Tpl> = {
+export type TemplateKey = 'url' | 'chat' | 'feed';
+
+export const TEMPLATE_OPTIONS: Array<{ key: TemplateKey; label: string }> = [
+  { key: 'url', label: 'URL Shortener' },
+  { key: 'chat', label: 'Chat App' },
+  { key: 'feed', label: 'News Feed' },
+];
+
+const TEMPLATES: Record<TemplateKey, Tpl> = {
   url: {
     nodes: [
       { key: 'browser', icon: 'browser', label: 'Client', x: 40, y: 200 },
@@ -51,18 +55,14 @@ export const TEMPLATES: Record<string, Tpl> = {
   },
 };
 
-/** Wipe the whole canvas and reset id counters. */
-export function clearAll(): void {
-  Object.keys(nodes).forEach(deleteNode);
-  regions.slice().forEach(deleteRegion);
-  ids.n = ids.e = ids.r = 0;
-}
-
-export function loadTemplate(key: string): void {
+/** Expand a template into a full GraphData with generated ids. */
+export function templateToData(key: TemplateKey): GraphData {
   const t = TEMPLATES[key];
-  if (!t) return;
-  clearAll();
-  t.regions.forEach((r) => createRegion(r));
-  const made = t.nodes.map((n) => createNode({ key: n.key, icon: n.icon, label: n.label }, n.x, n.y));
-  t.edges.forEach(([a, b, l]) => createEdge(made[a].id, made[b].id, undefined, l));
+  const nodes: GraphNode[] = t.nodes.map((n, i) => ({ id: `n${i + 1}`, ...n }));
+  const edges = t.edges.map(([a, b, label], i) => ({ id: `e${i + 1}`, from: nodes[a].id, to: nodes[b].id, label }));
+  const regions: Region[] = t.regions.map((r, i) => ({
+    id: `r${i + 1}`, title: r.title ?? 'Region', x: r.x ?? 80, y: r.y ?? 80,
+    w: r.w ?? 260, h: r.h ?? 180, color: r.color ?? '#4f8cff',
+  }));
+  return { nodes, edges, regions };
 }

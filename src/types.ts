@@ -1,31 +1,25 @@
 export type EdgeMode = 'curved' | 'ortho';
 
-/** A palette entry / the minimal spec needed to spawn a node. */
+/** Palette entry / minimal spec to spawn a node. */
 export interface NodeDef {
   key: string;
   icon: string;
   label: string;
 }
 
-/** A node placed on the canvas. */
 export interface GraphNode extends NodeDef {
   id: string;
   x: number;
   y: number;
-  el: HTMLElement;
 }
 
-/** A directed connection between two nodes. */
 export interface Edge {
   id: string;
   from: string;
   to: string;
   label: string;
-  el: SVGPathElement;
-  textEl: SVGTextElement;
 }
 
-/** A resizable group box drawn behind the nodes. */
 export interface Region {
   id: string;
   title: string;
@@ -34,13 +28,20 @@ export interface Region {
   w: number;
   h: number;
   color: string;
-  el: HTMLElement;
 }
 
-/** Serialized diagram written by Export / read by Import. */
+/** The undoable graph. `seq` is a monotonic id counter. */
+export interface GraphState {
+  nodes: Record<string, GraphNode>;
+  edges: Edge[];
+  regions: Region[];
+  seq: number;
+}
+
+/** Serialized diagram (export / import / templates). */
 export interface GraphData {
   edgeMode?: EdgeMode;
-  nodes: Array<Pick<GraphNode, 'id' | 'key' | 'icon' | 'label' | 'x' | 'y'>>;
-  edges: Array<Pick<Edge, 'id' | 'from' | 'to' | 'label'>>;
-  regions: Array<Pick<Region, 'id' | 'title' | 'x' | 'y' | 'w' | 'h' | 'color'>>;
+  nodes: GraphNode[];
+  edges: Edge[];
+  regions: Region[];
 }
