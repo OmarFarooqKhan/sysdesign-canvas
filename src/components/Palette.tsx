@@ -1,12 +1,22 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { PALETTE } from '../data/palette';
 import { Icon } from './Icon';
 
-/** Left sidebar: draggable node-type palette, grouped by section. */
+/** Left sidebar: draggable node-type palette, grouped by section. Collapsible. */
 export function Palette() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <aside className="palette">
-      {PALETTE.map((section) => (
+    <aside className={collapsed ? 'palette collapsed' : 'palette'}>
+      <button
+        className="palette-toggle"
+        aria-label={collapsed ? 'Expand palette' : 'Collapse palette'}
+        aria-pressed={collapsed}
+        onClick={() => setCollapsed((c) => !c)}
+      >
+        {collapsed ? '»' : '«'}
+      </button>
+      {!collapsed && PALETTE.map((section) => (
         <Fragment key={section.group}>
           <h2>{section.group}</h2>
           {section.items.map((item) => (

@@ -4,8 +4,10 @@ import { ViewportProvider } from './store/ViewportContext';
 import { Toolbar } from './components/Toolbar';
 import { Palette } from './components/Palette';
 import { Canvas } from './components/Canvas';
+import { useAutoHideScrollbars } from './hooks/useAutoHideScrollbars';
 
 export function App() {
+  useAutoHideScrollbars();
   return (
     <GraphProvider>
       <UIProvider>
