@@ -56,6 +56,14 @@ describe('EdgeLayer', () => {
     expect(container.querySelectorAll('path.edge').length).toBe(1);
   });
 
+  it('bows a reciprocal pair of edges apart instead of overlapping', () => {
+    const initial = seed();
+    initial.edges.push({ id: 'e2', from: 'n2', to: 'n1', label: 'replies' });
+    const { container } = renderLayer(initial);
+    const [d1, d2] = Array.from(container.querySelectorAll('path.edge')).map((p) => p.getAttribute('d'));
+    expect(d1).not.toBe(d2);
+  });
+
   it('skips edges whose endpoints are missing', () => {
     const initial = seed();
     initial.edges.push({ id: 'e2', from: 'n1', to: 'missing', label: '' });

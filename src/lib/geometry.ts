@@ -87,9 +87,13 @@ export function edgePath(mode: EdgeMode, x1: number, y1: number, x2: number, y2:
   const bx = p.x * bend;
   const by = p.y * bend;
   if (Math.abs(dx) >= Math.abs(dy)) {
-    const ext = Math.abs(dx) * 0.5 + 20;
+    // Signed, not abs: pulls each control point toward the other endpoint. An
+    // unsigned extension pushes both outward when the target is behind the
+    // source (dx < 0), flipping the arrival tangent so the arrowhead faces away.
+    const ext = dx / 2 + Math.sign(dx || 1) * 20;
     return `M ${x1} ${y1} C ${x1 + ext + bx} ${y1 + by}, ${x2 - ext + bx} ${y2 + by}, ${x2} ${y2}`;
   }
-  const ext = Math.abs(dy) * 0.5 + 20;
+  // dy is never 0 here (this branch only runs when |dy| > |dx|), so no `|| 1` fallback.
+  const ext = dy / 2 + Math.sign(dy) * 20;
   return `M ${x1} ${y1} C ${x1 + bx} ${y1 + ext + by}, ${x2 + bx} ${y2 - ext + by}, ${x2} ${y2}`;
 }

@@ -22,7 +22,7 @@ function Probe() {
 }
 
 function renderEdge(overrides: Partial<Parameters<typeof EdgeView>[0]> = {}, initial?: GraphState) {
-  const props = { edge, from, to, edgeMode: 'curved' as const, selected: false, onSelect: vi.fn(), ...overrides };
+  const props = { edge, from, to, edgeMode: 'curved' as const, selected: false, defaultBend: 0, onSelect: vi.fn(), ...overrides };
   const utils = render(
     <GraphProvider initial={initial ?? seed(props.edge)}>
       <Probe />
@@ -140,6 +140,16 @@ describe('EdgeView', () => {
     expect(bent).not.toBeUndefined();
     act(() => probeUndo!());
     expect(probeState!.edges[0].bend).toBeUndefined();
+  });
+
+  it('falls back to defaultBend only when edge.bend is unset', () => {
+    const zeroDefault = renderEdge({ defaultBend: 0 }).container.querySelector('path.edge')!.getAttribute('d');
+    const nonZeroDefault = renderEdge({ defaultBend: 24 }).container.querySelector('path.edge')!.getAttribute('d');
+    expect(nonZeroDefault).not.toBe(zeroDefault);
+
+    const explicitZero = renderEdge({ defaultBend: 24, edge: { ...edge, bend: 0 } })
+      .container.querySelector('path.edge')!.getAttribute('d');
+    expect(explicitZero).toBe(zeroDefault);
   });
 
   it('starting a new drag after one ends begins its own session', () => {

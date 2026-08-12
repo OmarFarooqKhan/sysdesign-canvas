@@ -101,6 +101,24 @@ describe('geometry: edgePath curved mode', () => {
     // perpendicular of a vertical segment is horizontal: bx=-bend, by=0
     expect(d).toBe('M 0 0 C -20 70, -20 30, 0 100');
   });
+
+  it('keeps control points between the endpoints when the target is behind the source (dx < 0)', () => {
+    // Regression: an unsigned extension here used to push both control points
+    // outward past the endpoints, flipping the arrival tangent and making the
+    // arrowhead marker (auto-start-reverse) point away from the target.
+    const d = edgePath('curved', 100, 0, 0, 50);
+    expect(d).toBe('M 100 0 C 30 0, 70 50, 0 50');
+  });
+
+  it('keeps control points between the endpoints when the target is above the source (dy < 0)', () => {
+    const d = edgePath('curved', 0, 100, 20, 0);
+    expect(d).toBe('M 0 100 C 0 30, 20 70, 20 0');
+  });
+
+  it('falls back to a fixed small loop when source and target exactly coincide', () => {
+    const d = edgePath('curved', 0, 0, 0, 0);
+    expect(d).toBe('M 0 0 C 20 0, -20 0, 0 0');
+  });
 });
 
 describe('geometry: edgePath ortho mode', () => {

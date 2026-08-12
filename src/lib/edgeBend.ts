@@ -8,6 +8,19 @@ export function bendDelta(x1: number, y1: number, x2: number, y2: number, dx: nu
   return dx * p.x + dy * p.y;
 }
 
+/** Fraction of the mid-path bend also applied at the endpoints themselves, so
+ *  a bent edge's ends sit apart from an unbent line between the same
+ *  anchors — most visibly, so a reciprocal pair's two edges don't touch at
+ *  the anchor point they'd otherwise share. */
+const ENDPOINT_BEND_RATIO = 0.35;
+
+/** Nudge both endpoints along their perpendicular by a fraction of `bend`. */
+export function bowEndpoints(sx: number, sy: number, tx: number, ty: number, bend: number) {
+  const p = perpUnit(sx, sy, tx, ty);
+  const offset = bend * ENDPOINT_BEND_RATIO;
+  return { sx: sx + p.x * offset, sy: sy + p.y * offset, tx: tx + p.x * offset, ty: ty + p.y * offset };
+}
+
 /** Point to anchor the edge label at: the path's visual midpoint,
  *  accounting for its bend, in whichever way the given mode bows it. */
 export function edgeMidpoint(mode: EdgeMode, x1: number, y1: number, x2: number, y2: number, bend = 0) {

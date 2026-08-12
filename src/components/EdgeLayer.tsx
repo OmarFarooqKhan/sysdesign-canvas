@@ -6,6 +6,7 @@ import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
 import { EdgeView } from './EdgeView';
 import { ContextMenu } from './ContextMenu';
+import { autoBend } from '../lib/reciprocalBend';
 
 export function EdgeLayer() {
   const { state, dispatch } = useGraph();
@@ -61,6 +62,7 @@ export function EdgeLayer() {
                 to={state.nodes[e.to]}
                 edgeMode={edgeMode}
                 selected={selectedEdgeId === e.id}
+                defaultBend={autoBend(state.edges, e, state.nodes[e.from], state.nodes[e.to])}
                 onSelect={onSelectEdge}
               />
             ),

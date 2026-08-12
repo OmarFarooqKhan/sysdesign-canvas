@@ -3,24 +3,26 @@ import type { Edge, EdgeMode, GraphNode } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { edgeEndpoints, edgePath, insetEndpoints } from '../lib/geometry';
-import { bendDelta, edgeMidpoint } from '../lib/edgeBend';
+import { bendDelta, bowEndpoints, edgeMidpoint } from '../lib/edgeBend';
 
 const DRAG_THRESHOLD = 4;
 
-export function EdgeView({ edge, from, to, edgeMode, selected, onSelect }: {
+export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSelect }: {
   edge: Edge;
   from: GraphNode;
   to: GraphNode;
   edgeMode: EdgeMode;
   selected: boolean;
+  defaultBend: number;
   onSelect: (edge: Edge, x: number, y: number) => void;
 }) {
   const { dispatch } = useGraph();
-  const bend = edge.bend ?? 0;
+  const bend = edge.bend ?? defaultBend;
   const anchors = edgeEndpoints(from, to);
   const { sx, sy, tx, ty } = insetEndpoints(anchors.sx, anchors.sy, anchors.tx, anchors.ty, !!edge.bidirectional);
-  const d = edgePath(edgeMode, sx, sy, tx, ty, bend);
-  const { x: mx, y: my } = edgeMidpoint(edgeMode, sx, sy, tx, ty, bend);
+  const bowed = bowEndpoints(sx, sy, tx, ty, bend);
+  const d = edgePath(edgeMode, bowed.sx, bowed.sy, bowed.tx, bowed.ty, bend);
+  const { x: mx, y: my } = edgeMidpoint(edgeMode, bowed.sx, bowed.sy, bowed.tx, bowed.ty, bend);
 
   const draggedRef = useRef(false);
   const startBendRef = useRef(bend);
