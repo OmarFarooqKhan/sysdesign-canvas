@@ -13,6 +13,7 @@ describe('action helpers', () => {
     expect(isSessionAction({ type: 'RESIZE_REGION', id: 'r1', w: 1, h: 1 })).toBe(true);
     expect(isSessionAction({ type: 'BEND_EDGE', id: 'e1', bend: 1 })).toBe(true);
     expect(isSessionAction({ type: 'CLEAR' })).toBe(false);
+    expect(isSessionAction({ type: 'SET_NODE_DB', id: 'n1', db: { tables: [] } })).toBe(false);
   });
 
   it('maxIdNum finds the largest embedded number, ignoring non-numeric', () => {

@@ -27,6 +27,11 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
       if (!n) return s;
       return { ...s, nodes: { ...s.nodes, [a.id]: { ...n, label: a.label } } };
     }
+    case 'SET_NODE_DB': {
+      const n = s.nodes[a.id];
+      if (!n) return s;
+      return { ...s, nodes: { ...s.nodes, [a.id]: { ...n, db: a.db } } };
+    }
     case 'DELETE_NODE': {
       if (!s.nodes[a.id]) return s;
       const nodes = { ...s.nodes };

@@ -36,4 +36,28 @@ describe('io', () => {
   it('parse throws on malformed input', () => {
     expect(() => parse(JSON.stringify({ nodes: [] }))).toThrow(/expected nodes/);
   });
+
+  it('round-trips a node with db schema data through export (toData) and import (parse)', () => {
+    const withDb: GraphState = {
+      ...state,
+      nodes: {
+        n1: {
+          ...state.nodes.n1,
+          key: 'sql',
+          db: {
+            tables: [{
+              name: 'orders',
+              columns: [{ name: 'id', type: 'uuid', pk: true }, { name: 'user_id', fk: 'users.id' }],
+              shardKey: 'user_id',
+              indexes: ['idx_user_id'],
+              constraints: ['unique(id)'],
+            }],
+          },
+        },
+      },
+    };
+    const exported = toData(withDb, 'curved');
+    const imported = parse(JSON.stringify(exported));
+    expect(imported.nodes[0].db).toEqual(withDb.nodes.n1.db);
+  });
 });
