@@ -111,7 +111,18 @@ describe('NodeView', () => {
     const n2Root = container.querySelector('[data-id="n2"]')!;
     fireEvent.mouseDown(port, { clientX: 190, clientY: 130 });
     fireEvent.mouseMove(document, { clientX: 300, clientY: 150 });
-    expect(container.querySelector('svg[style*="position: fixed"] line')).toBeTruthy();
+    const line = container.querySelector('svg[style*="position: fixed"] line')!;
+    // the line must stay anchored at the port (press point) and follow the cursor,
+    // not collapse to a zero-length point at the current mouse position.
+    expect(line.getAttribute('x1')).toBe('190');
+    expect(line.getAttribute('y1')).toBe('130');
+    expect(line.getAttribute('x2')).toBe('300');
+    expect(line.getAttribute('y2')).toBe('150');
+    fireEvent.mouseMove(document, { clientX: 320, clientY: 160 });
+    expect(line.getAttribute('x1')).toBe('190');
+    expect(line.getAttribute('y1')).toBe('130');
+    expect(line.getAttribute('x2')).toBe('320');
+    expect(line.getAttribute('y2')).toBe('160');
     fireEvent.mouseUp(n2Root);
     expect(probeState!.edges.length).toBe(1);
     expect(probeState!.edges[0]).toMatchObject({ from: 'n1', to: 'n2' });

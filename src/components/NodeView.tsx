@@ -6,6 +6,7 @@ import { useUI } from '../store/UIContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { textOf } from '../lib/dom';
 import { Icon } from './Icon';
+import { LinkPreview } from './LinkPreview';
 
 /** Node id currently being dragged from its port to form an edge, if any. */
 let linkSource: string | null = null;
@@ -14,6 +15,7 @@ export function NodeView({ node }: { node: GraphNode }) {
   const { dispatch } = useGraph();
   const { selectedId, selectNode } = useUI();
   const startRef = useRef({ x: node.x, y: node.y });
+  const linkStartRef = useRef({ x: 0, y: 0 });
   const labelRef = useRef<HTMLDivElement>(null);
   const [linking, setLinking] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -30,7 +32,9 @@ export function NodeView({ node }: { node: GraphNode }) {
 
   const dragLink = usePointerDrag({
     onStart: () => { linkSource = node.id; setLinking(true); },
-    onMove: (_dx, _dy, ev) => setTempLine({ x1: ev.clientX, y1: ev.clientY, x2: ev.clientX, y2: ev.clientY }),
+    onMove: (_dx, _dy, ev) => setTempLine({
+      x1: linkStartRef.current.x, y1: linkStartRef.current.y, x2: ev.clientX, y2: ev.clientY,
+    }),
     onEnd: () => {
       setLinking(false);
       setTempLine(null);
@@ -42,6 +46,11 @@ export function NodeView({ node }: { node: GraphNode }) {
     if ((e.target as HTMLElement).closest('.port')) return;
     selectNode(node.id);
     dragNode(e);
+  };
+
+  const onPortMouseDown = (e: ReactMouseEvent) => {
+    linkStartRef.current = { x: e.clientX, y: e.clientY };
+    dragLink(e);
   };
 
   const onRootMouseUp = () => {
@@ -64,7 +73,7 @@ export function NodeView({ node }: { node: GraphNode }) {
     <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>
       <div className="box" onMouseDown={onBoxMouseDown}>
         <Icon name={node.icon} />
-        <div className="port" onMouseDown={dragLink} />
+        <div className="port" onMouseDown={onPortMouseDown} />
       </div>
       <div
         ref={labelRef}
@@ -77,11 +86,7 @@ export function NodeView({ node }: { node: GraphNode }) {
       >
         {node.label}
       </div>
-      {tempLine && (
-        <svg style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50 }}>
-          <line x1={tempLine.x1} y1={tempLine.y1} x2={tempLine.x2} y2={tempLine.y2} stroke="#34d399" strokeWidth={2} />
-        </svg>
-      )}
+      {tempLine && <LinkPreview {...tempLine} />}
     </div>
   );
 }
