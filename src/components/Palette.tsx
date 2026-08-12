@@ -8,14 +8,17 @@ export function Palette() {
 
   return (
     <aside className={collapsed ? 'palette collapsed' : 'palette'}>
-      <button
-        className="palette-toggle"
-        aria-label={collapsed ? 'Expand palette' : 'Collapse palette'}
-        aria-pressed={collapsed}
-        onClick={() => setCollapsed((c) => !c)}
-      >
-        {collapsed ? '»' : '«'}
-      </button>
+      <div className="palette-header">
+        {!collapsed && <span className="palette-title">Components</span>}
+        <button
+          className="palette-toggle"
+          aria-label={collapsed ? 'Expand palette' : 'Collapse palette'}
+          aria-pressed={collapsed}
+          onClick={() => setCollapsed((c) => !c)}
+        >
+          {collapsed ? '»' : '«'}
+        </button>
+      </div>
       {!collapsed && PALETTE.map((section) => (
         <Fragment key={section.group}>
           <h2>{section.group}</h2>
