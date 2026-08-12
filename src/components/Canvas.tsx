@@ -46,7 +46,8 @@ export function Canvas() {
   const onCaptureClick = (e: ReactMouseEvent) => { if (panMode) e.stopPropagation(); };
 
   const onMouseDown = (e: ReactMouseEvent) => {
-    if (e.target === e.currentTarget) startMarquee(e);
+    const target = e.target as HTMLElement;
+    if (target === e.currentTarget || target.classList.contains('canvas-inner')) startMarquee(e);
   };
 
   const cls = ['canvas', panMode && 'pan-mode'].filter(Boolean).join(' ');
