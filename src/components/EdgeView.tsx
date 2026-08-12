@@ -22,6 +22,14 @@ export function EdgeView({ edge, from, to, edgeMode, selected, onSelect }: {
   return (
     <g>
       <path
+        className="edge-hit"
+        stroke="transparent"
+        strokeWidth={14}
+        fill="none"
+        d={d}
+        onClick={handleClick}
+      />
+      <path
         className="edge"
         markerEnd="url(#arrow)"
         markerStart={edge.bidirectional ? 'url(#arrow)' : undefined}
