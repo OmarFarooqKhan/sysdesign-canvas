@@ -5,6 +5,7 @@ import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
+import { useNodeDrag } from '../hooks/useNodeDrag';
 import { screenToLocal } from '../lib/viewport';
 import { textOf } from '../lib/dom';
 import { Icon } from './Icon';
@@ -15,27 +16,19 @@ let linkSource: string | null = null;
 
 export function NodeView({ node }: { node: GraphNode }) {
   const { dispatch } = useGraph();
-  const { selectedId, selectNode } = useUI();
+  const { selectedNodeIds, selectNode } = useUI();
   const { zoom, panX, panY, canvasRef } = useViewport();
-  const startRef = useRef({ x: node.x, y: node.y });
   const linkStartRef = useRef({ x: 0, y: 0 });
   const labelRef = useRef<HTMLDivElement>(null);
   const [linking, setLinking] = useState(false);
   const [editing, setEditing] = useState(false);
   const [tempLine, setTempLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
-  /** Client coords -> canvas coords, relative to this node's own x/y (see LinkPreview). */
+  // Client coords -> canvas coords, relative to this node's own x/y (see LinkPreview).
   const toLocal = (clientX: number, clientY: number) =>
     screenToLocal(clientX, clientY, canvasRef.current?.getBoundingClientRect(), { zoom, panX, panY }, node.x, node.y);
 
-  const dragNode = usePointerDrag({
-    onStart: () => { startRef.current = { x: node.x, y: node.y }; },
-    onMove: (dx, dy) => dispatch({
-      type: 'MOVE_NODE', id: node.id,
-      x: Math.max(0, startRef.current.x + dx / zoom), y: Math.max(0, startRef.current.y + dy / zoom),
-    }),
-    onEnd: () => dispatch({ type: 'END_SESSION' }),
-  });
+  const dragNode = useNodeDrag(node);
 
   const dragLink = usePointerDrag({
     onStart: () => { linkSource = node.id; setLinking(true); },
@@ -52,7 +45,8 @@ export function NodeView({ node }: { node: GraphNode }) {
 
   const onBoxMouseDown = (e: ReactMouseEvent) => {
     if ((e.target as HTMLElement).closest('.port')) return;
-    selectNode(node.id);
+    // Keep an existing multi-selection intact when starting a drag on one of its members.
+    if (!(selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id))) selectNode(node.id);
     dragNode(e);
   };
 
@@ -75,7 +69,7 @@ export function NodeView({ node }: { node: GraphNode }) {
     if (e.key === 'Enter') { e.preventDefault(); labelRef.current?.blur(); }
   };
 
-  const cls = ['node', selectedId === node.id && 'selected', linking && 'linking'].filter(Boolean).join(' ');
+  const cls = ['node', selectedNodeIds.includes(node.id) && 'selected', linking && 'linking'].filter(Boolean).join(' ');
 
   return (
     <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>

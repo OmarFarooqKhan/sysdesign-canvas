@@ -10,6 +10,14 @@ const base = (): GraphState => ({
   seq: 1,
 });
 
+const withTwoNodes = (): GraphState => ({
+  ...base(),
+  nodes: {
+    n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 10, y: 20 },
+    n2: { id: 'n2', key: 'sql', icon: 'sql', label: 'DB', x: 100, y: 200 },
+  },
+});
+
 describe('graphReducer nodes', () => {
   it('adds a node and bumps seq, clamping negatives', () => {
     const s = graphReducer(emptyGraph(), { type: 'ADD_NODE', def: { key: 'db', icon: 'sql', label: 'DB' }, x: -5, y: 40 });
@@ -22,6 +30,16 @@ describe('graphReducer nodes', () => {
     expect(graphReducer(s, { type: 'RENAME_NODE', id: 'nope', label: 'x' })).toBe(s);
     expect(graphReducer(s, { type: 'MOVE_NODE', id: 'n1', x: -9, y: 7 }).nodes.n1).toMatchObject({ x: 0, y: 7 });
     expect(graphReducer(s, { type: 'RENAME_NODE', id: 'n1', label: 'New' }).nodes.n1.label).toBe('New');
+  });
+  it('MOVE_NODES moves every listed node, clamping negatives, ignoring unknown ids', () => {
+    const s = withTwoNodes();
+    const out = graphReducer(s, {
+      type: 'MOVE_NODES',
+      moves: [{ id: 'n1', x: -5, y: 30 }, { id: 'n2', x: 150, y: 250 }, { id: 'nope', x: 1, y: 1 }],
+    });
+    expect(out.nodes.n1).toMatchObject({ x: 0, y: 30 });
+    expect(out.nodes.n2).toMatchObject({ x: 150, y: 250 });
+    expect(Object.keys(out.nodes)).toEqual(['n1', 'n2']);
   });
   it('deletes a node and its edges, ignoring unknown ids', () => {
     const s: GraphState = { ...base(), edges: [{ id: 'e1', from: 'n1', to: 'n2', label: '' }] };

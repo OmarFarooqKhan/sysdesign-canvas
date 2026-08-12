@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { NodeDef } from '../types';
 import { useGraph } from '../store/GraphContext';
-import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { usePointerDrag } from '../hooks/usePointerDrag';
@@ -12,14 +11,15 @@ import { NodeView } from './NodeView';
 import { RegionView } from './RegionView';
 import { EmptyState } from './EmptyState';
 import { ZoomControls } from './ZoomControls';
+import { Marquee, useMarquee } from './Marquee';
 
 /** The diagram surface: drop target for new nodes, hosts edges/regions/nodes. */
 export function Canvas() {
   const { state, dispatch } = useGraph();
-  const { clearSelection } = useUI();
   const { zoom, panX, panY, panMode, canvasRef, setViewport } = useViewport();
   useKeyboard();
   const panStart = useRef({ x: 0, y: 0 });
+  const { onMouseDown: startMarquee, rect: marqueeRect } = useMarquee();
 
   const onDrop = (e: ReactDragEvent) => {
     e.preventDefault();
@@ -46,7 +46,7 @@ export function Canvas() {
   const onCaptureClick = (e: ReactMouseEvent) => { if (panMode) e.stopPropagation(); };
 
   const onMouseDown = (e: ReactMouseEvent) => {
-    if (e.target === e.currentTarget) clearSelection();
+    if (e.target === e.currentTarget) startMarquee(e);
   };
 
   const cls = ['canvas', panMode && 'pan-mode'].filter(Boolean).join(' ');
@@ -66,6 +66,7 @@ export function Canvas() {
         <EdgeLayer />
         {state.regions.map((r) => <RegionView key={r.id} region={r} />)}
         {Object.values(state.nodes).map((n) => <NodeView key={n.id} node={n} />)}
+        <Marquee rect={marqueeRect} />
       </div>
       <EmptyState />
       <ZoomControls />

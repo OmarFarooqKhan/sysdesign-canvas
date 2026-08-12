@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
-import { UIProvider } from '../../store/UIContext';
+import { UIProvider, useUI } from '../../store/UIContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { NodeView } from '../../components/NodeView';
 import type { GraphState } from '../../types';
@@ -30,13 +30,20 @@ function ZoomProbe() {
   return <button data-testid="zoom-2x" onClick={() => setViewport({ zoom: 2 })} />;
 }
 
-function renderNodes(initial: GraphState) {
+/** Test-only trigger for a multi-selection, since marquee drag lives elsewhere. */
+function SelectAllButton({ ids }: { ids: string[] }) {
+  const { selectNodes } = useUI();
+  return <button onClick={() => selectNodes(ids)}>select-all</button>;
+}
+
+function renderNodes(initial: GraphState, multiIds?: string[]) {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
         <ViewportProvider>
           <Probe />
           <ZoomProbe />
+          {multiIds && <SelectAllButton ids={multiIds} />}
           <NodeView node={initial.nodes.n1} />
           <NodeView node={initial.nodes.n2} />
         </ViewportProvider>
@@ -168,5 +175,51 @@ describe('NodeView', () => {
     fireEvent.mouseUp(document);
     expect(container.querySelector('[data-id="n1"]')).toHaveClass('selected');
     expect(container.querySelector('[data-id="n2"]')).not.toHaveClass('selected');
+  });
+
+  it('dragging a node that is part of a multi-selection moves the whole group', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial, ['n1', 'n2']);
+    fireEvent.click(screen.getByText('select-all'));
+    expect(container.querySelector('[data-id="n1"]')).toHaveClass('selected');
+    expect(container.querySelector('[data-id="n2"]')).toHaveClass('selected');
+
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 130, clientY: 90 });
+    fireEvent.mouseUp(document);
+
+    // n1 started at (100,100), n2 at (300,100); both shift by (30,-10).
+    expect(probeState!.nodes.n1).toMatchObject({ x: 130, y: 90 });
+    expect(probeState!.nodes.n2).toMatchObject({ x: 330, y: 90 });
+    // the multi-selection survives the drag (still both selected).
+    expect(container.querySelector('[data-id="n1"]')).toHaveClass('selected');
+    expect(container.querySelector('[data-id="n2"]')).toHaveClass('selected');
+  });
+
+  it('group drag clamps every node to non-negative coordinates', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial, ['n1', 'n2']);
+    fireEvent.click(screen.getByText('select-all'));
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: -1000, clientY: -1000 });
+    fireEvent.mouseUp(document);
+    expect(probeState!.nodes.n1).toMatchObject({ x: 0, y: 0 });
+    expect(probeState!.nodes.n2).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('dragging a node NOT in the current multi-selection collapses to just that node', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial, ['n1']);
+    fireEvent.click(screen.getByText('select-all')); // selects only n1, so n2 is not a "group"
+    const box = container.querySelector('[data-id="n2"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 300, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 320, clientY: 110 });
+    fireEvent.mouseUp(document);
+    expect(probeState!.nodes.n2).toMatchObject({ x: 320, y: 110 });
+    expect(probeState!.nodes.n1).toMatchObject({ x: 100, y: 100 }); // unaffected, single-drag semantics
+    expect(container.querySelector('[data-id="n1"]')).not.toHaveClass('selected');
+    expect(container.querySelector('[data-id="n2"]')).toHaveClass('selected');
   });
 });
