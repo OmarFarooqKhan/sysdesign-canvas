@@ -10,6 +10,16 @@ Guidance for Claude Code when working in this repository.
   (`*.test.ts(x)`) are exempt.**
 - **Separate the logic.** Keep each module focused on a single responsibility.
   Prefer adding a new small module over expanding an existing one.
+- **No `any`.** Never use the TypeScript `any` type (including `as any`) —
+  find or write a real type instead (e.g. an intersection cast for a CSS
+  custom property, a proper generic, `unknown` + a narrowing check). Enforced
+  by `npm run check:no-any` (`scripts/check-no-any.mjs`) — see *Before
+  committing* below. It's a text-based check (strips comments/strings, then
+  regexes for the keyword), not a real parser: `typescript-eslint` doesn't
+  support TypeScript 7 yet (peer range `<6.1.0`, which the *Latest packages*
+  rule below rules out installing anyway), and TS 7's own public API dropped
+  the classic `createSourceFile`/`forEachChild` surface a hand-rolled AST
+  walk would need. Revisit this once either catches up.
 - **Latest packages.** Use the latest stable version of every dependency to
   minimise security risk. Dependabot (`.github/dependabot.yml`) keeps npm
   packages and workflow actions current.
@@ -106,6 +116,8 @@ sysdesign-canvas/
 ├── .github/
 │   ├── dependabot.yml           # keeps npm + workflow actions current
 │   └── workflows/deploy.yml     # push to main → audit → test → build → deploy (GitHub Pages)
+├── scripts/
+│   └── check-no-any.mjs         # bans the `any` type; see the No `any` hard rule above
 ├── index.html
 ├── vite.config.ts
 ├── vitest.config.ts             # coverage thresholds (100%), setupFiles, excludes .claude/ worktrees
@@ -129,5 +141,6 @@ sysdesign-canvas/
 
 - `npm run test:coverage` — all tests pass at 100% coverage.
 - `npm run build` — passes `tsc` (strict, no-unused) and the Vite build.
+- `npm run check:no-any` — no TypeScript `any` usages.
 - Deploys run automatically via GitHub Actions on push to `main` (audit →
   tests → build → deploy).

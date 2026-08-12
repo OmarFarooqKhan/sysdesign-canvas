@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { Region } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
@@ -76,8 +76,8 @@ export function RegionView({ region }: { region: Region }) {
         top: region.y,
         width: region.w,
         height: region.h,
-        ['--reg' as any]: region.color,
-      }}
+        '--reg': region.color,
+      } as CSSProperties & { '--reg': string }}
     >
       <div
         ref={titleRef}
