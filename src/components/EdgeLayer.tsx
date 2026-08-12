@@ -1,19 +1,23 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Edge } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
+import { useViewport } from '../store/ViewportContext';
 import { EdgeView } from './EdgeView';
 import { ContextMenu } from './ContextMenu';
 
 export function EdgeLayer() {
   const { state, dispatch } = useGraph();
   const { edgeMode, selectedEdgeId, selectEdge } = useUI();
+  const { canvasRef } = useViewport();
   const [menu, setMenu] = useState<{ edge: Edge; x: number; y: number } | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
 
+  // Position relative to the (unscaled) canvas root, not the zoomed .canvas-inner layer the
+  // edge itself lives in, so the menu is portaled there too and never inherits the zoom scale.
   const onSelectEdge = (edge: Edge, x: number, y: number) => {
     selectEdge(edge.id);
-    const rect = svgRef.current!.getBoundingClientRect();
+    const rect = canvasRef.current!.getBoundingClientRect();
     setMenu({ edge, x: x - rect.left, y: y - rect.top });
   };
 
@@ -40,7 +44,7 @@ export function EdgeLayer() {
 
   return (
     <>
-      <svg className="edges" ref={svgRef}>
+      <svg className="edges">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="#5b6b8c" />
@@ -62,7 +66,10 @@ export function EdgeLayer() {
             ),
         )}
       </svg>
-      {menu && <ContextMenu x={menu.x} y={menu.y} items={items} onClose={() => setMenu(null)} />}
+      {menu && canvasRef.current && createPortal(
+        <ContextMenu x={menu.x} y={menu.y} items={items} onClose={() => setMenu(null)} />,
+        canvasRef.current,
+      )}
     </>
   );
 }

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider } from '../../store/UIContext';
+import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { EdgeLayer } from '../../components/EdgeLayer';
 import type { GraphState } from '../../types';
 
@@ -23,12 +24,22 @@ function Probe() {
   return null;
 }
 
+/** Stands in for Canvas.tsx's root div, which owns the canvasRef the menu portals into. */
+function CanvasStub({ children }: { children: React.ReactNode }) {
+  const { canvasRef } = useViewport();
+  return <div className="canvas" ref={canvasRef}>{children}</div>;
+}
+
 function renderLayer(initial: GraphState) {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
-        <Probe />
-        <EdgeLayer />
+        <ViewportProvider>
+          <Probe />
+          <CanvasStub>
+            <EdgeLayer />
+          </CanvasStub>
+        </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
   );
@@ -57,6 +68,14 @@ describe('EdgeLayer', () => {
     const path = container.querySelector('path.edge')!;
     fireEvent.click(path);
     expect(document.querySelector('.ctx')).toBeTruthy();
+  });
+
+  it('portals the menu onto the (unscaled) canvas root, not inside the zoomed edge svg', () => {
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    const menu = document.querySelector('.ctx')!;
+    expect(menu.closest('svg.edges')).toBeNull();
+    expect(menu.parentElement).toHaveClass('canvas');
   });
 
   it('labels the edge via the Label edge menu item using window.prompt', () => {
