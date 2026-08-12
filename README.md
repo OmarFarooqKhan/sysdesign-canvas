@@ -7,6 +7,20 @@ regions, undo/redo your changes, and export/import as JSON.
 
 **Live:** https://omarfarooqkhan.github.io/sysdesign-canvas/
 
+## Features
+
+- Drag components from the palette onto the canvas, wire them together, group
+  into regions
+- Side-aware edge anchors (curved or orthogonal), bidirectional edges, and
+  drag-to-bend edge routing
+- Zoom controls, fit-to-view, and a pan-mode toggle
+- Marquee multi-select with group move and group delete
+- SQL DB nodes: double-click to edit tables, columns (PK/FK/type), shard key,
+  indexes, and constraints
+- Undo/redo (Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z or Ctrl+Y), Delete to remove the
+  selection
+- Export/import the graph as JSON, plus starter templates
+
 ## Develop
 
 ```bash
@@ -16,7 +30,5 @@ npm run test:coverage  # run tests (100% coverage gate)
 npm run build          # type-check + build to dist/
 ```
 
-React 19 + Vite + TypeScript. Source in `src/`. Undo/redo via a custom reducer
-history — Cmd/Ctrl+Z to undo, Shift+Cmd/Ctrl+Z or Ctrl+Y to redo, Delete to
-remove the selection. Pushing to `main` runs audit + tests, then deploys to
-GitHub Pages.
+React 19 + Vite + TypeScript. Source in `src/`; undo/redo via a custom reducer
+history. Pushing to `main` runs audit + tests, then deploys to GitHub Pages.
