@@ -1,17 +1,21 @@
 import { GraphProvider } from './store/GraphContext';
 import { UIProvider } from './store/UIContext';
+import { Toolbar } from './components/Toolbar';
+import { Palette } from './components/Palette';
+import { Canvas } from './components/Canvas';
 
-// Foundation skeleton. Task D replaces the header/layout slots with the
-// Toolbar, Palette, and Canvas components once they exist.
 export function App() {
   return (
     <GraphProvider>
       <UIProvider>
         <div className="app">
-          <header>
-            <h1>🧩 System Design Canvas</h1>
-          </header>
-          <div className="layout" />
+          <Toolbar />
+          <div className="layout">
+            <Palette />
+            <div className="canvas-wrap">
+              <Canvas />
+            </div>
+          </div>
         </div>
       </UIProvider>
     </GraphProvider>

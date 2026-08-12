@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # Keep npm packages on latest to minimise security risk.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
+
+  # Keep the workflow's own actions current (prevents Node-runtime deprecations).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

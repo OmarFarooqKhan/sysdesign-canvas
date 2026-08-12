@@ -1,0 +1,102 @@
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, fireEvent } from '@testing-library/react';
+import { GraphProvider, useGraph } from '../store/GraphContext';
+import { UIProvider } from '../store/UIContext';
+import { EdgeLayer } from './EdgeLayer';
+import type { GraphState } from '../types';
+
+function seed(): GraphState {
+  return {
+    nodes: {
+      n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 100, y: 100 },
+      n2: { id: 'n2', key: 'sql', icon: 'sql', label: 'DB', x: 300, y: 100 },
+    },
+    edges: [{ id: 'e1', from: 'n1', to: 'n2', label: 'calls' }],
+    regions: [],
+    seq: 3,
+  };
+}
+
+let probeState: GraphState | null = null;
+function Probe() {
+  probeState = useGraph().state;
+  return null;
+}
+
+function renderLayer(initial: GraphState) {
+  return render(
+    <GraphProvider initial={initial}>
+      <UIProvider>
+        <Probe />
+        <EdgeLayer />
+      </UIProvider>
+    </GraphProvider>,
+  );
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('EdgeLayer', () => {
+  it('renders the arrow marker and one edge for valid endpoints', () => {
+    const { container } = renderLayer(seed());
+    expect(container.querySelector('marker#arrow')).toBeTruthy();
+    expect(container.querySelectorAll('path.edge').length).toBe(1);
+  });
+
+  it('skips edges whose endpoints are missing', () => {
+    const initial = seed();
+    initial.edges.push({ id: 'e2', from: 'n1', to: 'missing', label: '' });
+    const { container } = renderLayer(initial);
+    expect(container.querySelectorAll('path.edge').length).toBe(1);
+  });
+
+  it('opens a context menu on edge click', () => {
+    const { container } = renderLayer(seed());
+    const path = container.querySelector('path.edge')!;
+    fireEvent.click(path);
+    expect(document.querySelector('.ctx')).toBeTruthy();
+  });
+
+  it('labels the edge via the Label edge menu item using window.prompt', () => {
+    vi.spyOn(window, 'prompt').mockReturnValue('renamed  ');
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    const labelBtn = Array.from(document.querySelectorAll('.ctx button')).find((b) =>
+      b.textContent?.includes('Label edge'),
+    )!;
+    fireEvent.click(labelBtn);
+    expect(probeState!.edges[0].label).toBe('renamed');
+  });
+
+  it('does not change the label when prompt is cancelled', () => {
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    const labelBtn = Array.from(document.querySelectorAll('.ctx button')).find((b) =>
+      b.textContent?.includes('Label edge'),
+    )!;
+    fireEvent.click(labelBtn);
+    expect(probeState!.edges[0].label).toBe('calls');
+  });
+
+  it('deletes the edge via the Delete edge menu item', () => {
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    const delBtn = Array.from(document.querySelectorAll('.ctx button')).find((b) =>
+      b.textContent?.includes('Delete edge'),
+    )!;
+    expect(delBtn).toHaveClass('danger');
+    fireEvent.click(delBtn);
+    expect(probeState!.edges.length).toBe(0);
+  });
+
+  it('closes the menu on outside click', () => {
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    expect(document.querySelector('.ctx')).toBeTruthy();
+    fireEvent.click(document.body);
+    expect(document.querySelector('.ctx')).toBeFalsy();
+  });
+});

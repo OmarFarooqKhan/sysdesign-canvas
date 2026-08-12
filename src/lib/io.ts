@@ -21,8 +21,9 @@ export function download(data: GraphData, filename = 'system-design.json'): void
   URL.revokeObjectURL(url);
 }
 
-/** Parse + validate a diagram file's text. Throws on malformed input. */
-export function parse(text: string): GraphData {
+/** Parse + validate a diagram file's text. Throws on malformed input.
+ *  The returned `edgeMode` is always resolved (never undefined). */
+export function parse(text: string): GraphData & { edgeMode: EdgeMode } {
   const d = JSON.parse(text) as Partial<GraphData>;
   if (!Array.isArray(d.nodes) || !Array.isArray(d.edges) || !Array.isArray(d.regions)) {
     throw new Error('Invalid diagram: expected nodes, edges and regions arrays');

@@ -4,7 +4,7 @@ interface TplNode { key: string; icon: string; label: string; x: number; y: numb
 interface Tpl {
   nodes: TplNode[];
   edges: Array<[number, number, string]>;
-  regions: Array<Partial<Region>>;
+  regions: Array<Omit<Region, 'id'>>;
 }
 
 export type TemplateKey = 'url' | 'chat' | 'feed';
@@ -60,9 +60,6 @@ export function templateToData(key: TemplateKey): GraphData {
   const t = TEMPLATES[key];
   const nodes: GraphNode[] = t.nodes.map((n, i) => ({ id: `n${i + 1}`, ...n }));
   const edges = t.edges.map(([a, b, label], i) => ({ id: `e${i + 1}`, from: nodes[a].id, to: nodes[b].id, label }));
-  const regions: Region[] = t.regions.map((r, i) => ({
-    id: `r${i + 1}`, title: r.title ?? 'Region', x: r.x ?? 80, y: r.y ?? 80,
-    w: r.w ?? 260, h: r.h ?? 180, color: r.color ?? '#4f8cff',
-  }));
+  const regions: Region[] = t.regions.map((r, i) => ({ id: `r${i + 1}`, ...r }));
   return { nodes, edges, regions };
 }
