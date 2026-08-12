@@ -147,4 +147,62 @@ describe('NodeView', () => {
     expect(container.querySelector('[data-id="n1"]')).toHaveClass('selected');
     expect(container.querySelector('[data-id="n2"]')).not.toHaveClass('selected');
   });
+
+  it('has no has-data class or badge when a node has no db schema', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    expect(container.querySelector('[data-id="n2"]')).not.toHaveClass('has-data');
+    expect(container.querySelector('[data-id="n2"] .db-badge')).toBeNull();
+  });
+
+  it('shows the has-data class and a table-count badge once db schema is populated', () => {
+    const initial = seed({
+      nodes: {
+        n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 100, y: 100 },
+        n2: {
+          id: 'n2', key: 'sql', icon: 'sql', label: 'DB', x: 300, y: 100,
+          db: { tables: [{ name: 'a', columns: [], indexes: [], constraints: [] }, { name: 'b', columns: [], indexes: [], constraints: [] }] },
+        },
+      },
+    });
+    const { container } = renderNodes(initial);
+    const n2 = container.querySelector('[data-id="n2"]')!;
+    expect(n2).toHaveClass('has-data');
+    expect(n2.querySelector('.db-badge')).toHaveTextContent('2');
+  });
+
+  it('double-clicking the box of a SQL DB node opens the schema editor', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n2"] .box')!;
+    fireEvent.doubleClick(box);
+    expect(container.querySelector('.db-modal')).not.toBeNull();
+  });
+
+  it('double-clicking the box of a non-DB node does not open the schema editor', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.doubleClick(box);
+    expect(container.querySelector('.db-modal')).toBeNull();
+  });
+
+  it('double-clicking the port does not open the schema editor', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    const port = container.querySelector('[data-id="n2"] .port')!;
+    fireEvent.doubleClick(port);
+    expect(container.querySelector('.db-modal')).toBeNull();
+  });
+
+  it('closing the schema editor (Escape) removes it without touching state', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n2"] .box')!;
+    fireEvent.doubleClick(box);
+    expect(container.querySelector('.db-modal')).not.toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(container.querySelector('.db-modal')).toBeNull();
+    expect(probeState!.nodes.n2.db).toBeUndefined();
+  });
 });

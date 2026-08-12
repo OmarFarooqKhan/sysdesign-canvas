@@ -7,10 +7,26 @@ export interface NodeDef {
   label: string;
 }
 
+export interface DbColumn {
+  name: string;
+  type?: string;
+  pk?: boolean;
+  fk?: string; // "table.column"
+}
+
+export interface DbTable {
+  name: string;
+  columns: DbColumn[];
+  shardKey?: string;
+  indexes: string[];
+  constraints: string[];
+}
+
 export interface GraphNode extends NodeDef {
   id: string;
   x: number;
   y: number;
+  db?: { tables: DbTable[] };
 }
 
 export interface Edge {

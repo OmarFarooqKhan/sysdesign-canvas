@@ -1,4 +1,4 @@
-import type { GraphData, GraphState, NodeDef, Region } from '../types';
+import type { GraphData, GraphNode, GraphState, NodeDef, Region } from '../types';
 
 export const REGION_COLORS = ['#4f8cff', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#38bdf8'];
 
@@ -6,6 +6,7 @@ export type GraphAction =
   | { type: 'ADD_NODE'; def: NodeDef; x: number; y: number }
   | { type: 'MOVE_NODE'; id: string; x: number; y: number }
   | { type: 'RENAME_NODE'; id: string; label: string }
+  | { type: 'SET_NODE_DB'; id: string; db: NonNullable<GraphNode['db']> }
   | { type: 'DELETE_NODE'; id: string }
   | { type: 'ADD_EDGE'; from: string; to: string; label?: string }
   | { type: 'LABEL_EDGE'; id: string; label: string }

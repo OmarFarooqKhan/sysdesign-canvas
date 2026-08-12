@@ -23,6 +23,14 @@ describe('graphReducer nodes', () => {
     expect(graphReducer(s, { type: 'MOVE_NODE', id: 'n1', x: -9, y: 7 }).nodes.n1).toMatchObject({ x: 0, y: 7 });
     expect(graphReducer(s, { type: 'RENAME_NODE', id: 'n1', label: 'New' }).nodes.n1.label).toBe('New');
   });
+  it('sets db schema on a node, ignoring unknown ids', () => {
+    const s = base();
+    const db = { tables: [{ name: 'orders', columns: [], indexes: [], constraints: [] }] };
+    expect(graphReducer(s, { type: 'SET_NODE_DB', id: 'nope', db })).toBe(s);
+    const out = graphReducer(s, { type: 'SET_NODE_DB', id: 'n1', db });
+    expect(out.nodes.n1.db).toEqual(db);
+    expect(s.nodes.n1.db).toBeUndefined();
+  });
   it('deletes a node and its edges, ignoring unknown ids', () => {
     const s: GraphState = { ...base(), edges: [{ id: 'e1', from: 'n1', to: 'n2', label: '' }] };
     expect(graphReducer(s, { type: 'DELETE_NODE', id: 'nope' })).toBe(s);

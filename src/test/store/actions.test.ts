@@ -11,6 +11,7 @@ describe('action helpers', () => {
     expect(isSessionAction({ type: 'MOVE_REGION', id: 'r1', x: 0, y: 0 })).toBe(true);
     expect(isSessionAction({ type: 'RESIZE_REGION', id: 'r1', w: 1, h: 1 })).toBe(true);
     expect(isSessionAction({ type: 'CLEAR' })).toBe(false);
+    expect(isSessionAction({ type: 'SET_NODE_DB', id: 'n1', db: { tables: [] } })).toBe(false);
   });
 
   it('maxIdNum finds the largest embedded number, ignoring non-numeric', () => {
