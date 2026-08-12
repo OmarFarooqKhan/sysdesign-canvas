@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { GraphProvider } from '../store/GraphContext';
-import { UIProvider, useUI } from '../store/UIContext';
-import { useGraph } from '../store/GraphContext';
-import { Toolbar } from './Toolbar';
+import { GraphProvider } from '../../store/GraphContext';
+import { UIProvider, useUI } from '../../store/UIContext';
+import { useGraph } from '../../store/GraphContext';
+import { Toolbar } from '../../components/Toolbar';
 
 /** Test-only harness: exposes a seed action + live node count alongside the Toolbar. */
 function Harness() {

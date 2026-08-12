@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { Icon } from './Icon';
+import { Icon } from '../../components/Icon';
 
 describe('Icon', () => {
   it('renders the named SVG and applies a className', () => {

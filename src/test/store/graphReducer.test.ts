@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { graphReducer } from './graphReducer';
-import { emptyGraph } from './actions';
-import type { GraphState } from '../types';
+import { graphReducer } from '../../store/graphReducer';
+import { emptyGraph } from '../../store/actions';
+import type { GraphState } from '../../types';
 
 const base = (): GraphState => ({
   nodes: { n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 10, y: 20 } },

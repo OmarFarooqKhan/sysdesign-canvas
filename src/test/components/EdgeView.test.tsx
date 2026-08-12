@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import { EdgeView } from './EdgeView';
-import type { Edge, GraphNode } from '../types';
+import { EdgeView } from '../../components/EdgeView';
+import type { Edge, GraphNode } from '../../types';
 
 const from: GraphNode = { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 100, y: 100 };
 const to: GraphNode = { id: 'n2', key: 'sql', icon: 'sql', label: 'DB', x: 300, y: 100 };

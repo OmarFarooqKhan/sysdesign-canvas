@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { usePointerDrag } from './usePointerDrag';
-import type { DragHandlers } from './usePointerDrag';
+import { usePointerDrag } from '../../hooks/usePointerDrag';
+import type { DragHandlers } from '../../hooks/usePointerDrag';
 
 function Draggable({ handlers, label }: { handlers: DragHandlers; label: string }) {
   const onMouseDown = usePointerDrag(handlers);

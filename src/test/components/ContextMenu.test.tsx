@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { ContextMenu } from './ContextMenu';
+import { ContextMenu } from '../../components/ContextMenu';
 
 describe('ContextMenu', () => {
   it('renders items (danger + normal) and fires onClick then onClose', () => {

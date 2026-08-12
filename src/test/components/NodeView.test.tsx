@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { GraphProvider, useGraph } from '../store/GraphContext';
-import { UIProvider } from '../store/UIContext';
-import { NodeView } from './NodeView';
-import type { GraphState } from '../types';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
+import { UIProvider } from '../../store/UIContext';
+import { NodeView } from '../../components/NodeView';
+import type { GraphState } from '../../types';
 
 function seed(overrides?: Partial<GraphState>): GraphState {
   return {

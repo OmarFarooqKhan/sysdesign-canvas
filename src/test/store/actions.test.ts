@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyGraph, isSessionAction, maxIdNum } from './actions';
+import { emptyGraph, isSessionAction, maxIdNum } from '../../store/actions';
 
 describe('action helpers', () => {
   it('emptyGraph is a fresh zeroed graph', () => {

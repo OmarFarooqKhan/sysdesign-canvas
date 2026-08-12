@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TEMPLATE_OPTIONS, templateToData } from './templates';
+import { TEMPLATE_OPTIONS, templateToData } from '../../data/templates';
 
 describe('templates', () => {
   it('exposes three template options', () => {

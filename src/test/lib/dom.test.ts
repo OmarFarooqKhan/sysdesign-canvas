@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { textOf } from './dom';
+import { textOf } from '../../lib/dom';
 
 describe('textOf', () => {
   it('returns empty string for null', () => {

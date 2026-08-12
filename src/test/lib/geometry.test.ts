@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { edgeEndpoints, edgePath, nodeCenter, portCenter } from './geometry';
-import type { GraphNode } from '../types';
+import { edgeEndpoints, edgePath, nodeCenter, portCenter } from '../../lib/geometry';
+import type { GraphNode } from '../../types';
 
 const node = (x: number, y: number): GraphNode => ({ id: 'n', key: 'k', icon: 'i', label: 'l', x, y });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { UIProvider, useUI } from './UIContext';
+import { UIProvider, useUI } from '../../store/UIContext';
 
 function Probe() {
   const ui = useUI();

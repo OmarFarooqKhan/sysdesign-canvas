@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { GraphProvider, useGraph } from '../store/GraphContext';
-import { UIProvider, useUI } from '../store/UIContext';
-import { useKeyboard } from './useKeyboard';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
+import { UIProvider, useUI } from '../../store/UIContext';
+import { useKeyboard } from '../../hooks/useKeyboard';
 
 /** Test-only harness exposing seed/select actions and live counts. */
 function Harness() {

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { GraphProvider, useGraph } from '../store/GraphContext';
-import { UIProvider } from '../store/UIContext';
-import { EdgeLayer } from './EdgeLayer';
-import type { GraphState } from '../types';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
+import { UIProvider } from '../../store/UIContext';
+import { EdgeLayer } from '../../components/EdgeLayer';
+import type { GraphState } from '../../types';
 
 function seed(): GraphState {
   return {

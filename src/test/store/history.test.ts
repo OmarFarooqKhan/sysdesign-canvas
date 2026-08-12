@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initHistory, makeHistoryReducer } from './history';
+import { initHistory, makeHistoryReducer } from '../../store/history';
 
 // Minimal counter reducer: ADD adds n; SET_TO replaces (session-style).
 type A = { type: 'ADD'; n: number } | { type: 'SET'; v: number } | { type: 'NOOP' };

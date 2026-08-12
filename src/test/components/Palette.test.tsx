@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PALETTE } from '../data/palette';
-import { Palette } from './Palette';
+import { PALETTE } from '../../data/palette';
+import { Palette } from '../../components/Palette';
 
 describe('Palette', () => {
   it('renders every group heading and item label', () => {

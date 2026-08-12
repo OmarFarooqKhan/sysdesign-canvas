@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { download, parse, toData } from './io';
-import type { GraphState } from '../types';
+import { download, parse, toData } from '../../lib/io';
+import type { GraphState } from '../../types';
 
 const state: GraphState = {
   nodes: { n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 1, y: 2 } },

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { GraphProvider, useGraph } from './GraphContext';
-import type { GraphState } from '../types';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
+import type { GraphState } from '../../types';
 
 function Probe() {
   const { state, dispatch, canUndo, canRedo } = useGraph();

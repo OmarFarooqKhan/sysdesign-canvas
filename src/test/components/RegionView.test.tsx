@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { GraphState } from '../types';
-import { GraphProvider, useGraph } from '../store/GraphContext';
-import { UIProvider, useUI } from '../store/UIContext';
-import { RegionView } from './RegionView';
+import type { GraphState } from '../../types';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
+import { UIProvider, useUI } from '../../store/UIContext';
+import { RegionView } from '../../components/RegionView';
 
 const region = { id: 'r1', title: 'Backend', x: 100, y: 100, w: 260, h: 180, color: '#34d399' };
 const initial: GraphState = { nodes: {}, edges: [], regions: [region], seq: 1 };
