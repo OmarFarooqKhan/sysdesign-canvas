@@ -24,6 +24,7 @@ export function EdgeView({ edge, from, to, edgeMode, selected, onSelect }: {
       <path
         className="edge"
         markerEnd="url(#arrow)"
+        markerStart={edge.bidirectional ? 'url(#arrow)' : undefined}
         stroke={selected ? '#4f8cff' : '#5b6b8c'}
         strokeWidth={2}
         fill="none"

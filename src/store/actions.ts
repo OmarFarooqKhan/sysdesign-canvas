@@ -10,6 +10,7 @@ export type GraphAction =
   | { type: 'ADD_EDGE'; from: string; to: string; label?: string }
   | { type: 'LABEL_EDGE'; id: string; label: string }
   | { type: 'DELETE_EDGE'; id: string }
+  | { type: 'TOGGLE_EDGE_DIRECTION'; id: string }
   | { type: 'ADD_REGION'; region?: Partial<Region> }
   | { type: 'MOVE_REGION'; id: string; x: number; y: number }
   | { type: 'RESIZE_REGION'; id: string; w: number; h: number }

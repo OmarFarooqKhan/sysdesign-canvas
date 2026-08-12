@@ -7,8 +7,13 @@ import { ContextMenu } from './ContextMenu';
 
 export function EdgeLayer() {
   const { state, dispatch } = useGraph();
-  const { edgeMode } = useUI();
+  const { edgeMode, selectedEdgeId, selectEdge } = useUI();
   const [menu, setMenu] = useState<{ edge: Edge; x: number; y: number } | null>(null);
+
+  const onSelectEdge = (edge: Edge, x: number, y: number) => {
+    selectEdge(edge.id);
+    setMenu({ edge, x, y });
+  };
 
   const items = menu
     ? [
@@ -18,6 +23,10 @@ export function EdgeLayer() {
             const v = window.prompt('Edge label:', menu.edge.label);
             if (v !== null) dispatch({ type: 'LABEL_EDGE', id: menu.edge.id, label: v.trim() });
           },
+        },
+        {
+          label: menu.edge.bidirectional ? '→ One-way' : '↔ Bidirectional',
+          onClick: () => dispatch({ type: 'TOGGLE_EDGE_DIRECTION', id: menu.edge.id }),
         },
         {
           label: '🗑 Delete edge',
@@ -45,8 +54,8 @@ export function EdgeLayer() {
                 from={state.nodes[e.from]}
                 to={state.nodes[e.to]}
                 edgeMode={edgeMode}
-                selected={menu?.edge.id === e.id}
-                onSelect={(edge, x, y) => setMenu({ edge, x, y })}
+                selected={selectedEdgeId === e.id}
+                onSelect={onSelectEdge}
               />
             ),
         )}

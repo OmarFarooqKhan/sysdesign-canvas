@@ -5,7 +5,7 @@ import { useUI } from '../store/UIContext';
 /** Global shortcuts: Delete/Backspace removes the selection, Cmd/Ctrl+Z undoes, redo variants redo. */
 export function useKeyboard() {
   const { dispatch } = useGraph();
-  const { selectedId, selectedRegionId } = useUI();
+  const { selectedId, selectedRegionId, selectedEdgeId } = useUI();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -15,6 +15,7 @@ export function useKeyboard() {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedId) dispatch({ type: 'DELETE_NODE', id: selectedId });
         else if (selectedRegionId) dispatch({ type: 'DELETE_REGION', id: selectedRegionId });
+        else if (selectedEdgeId) dispatch({ type: 'DELETE_EDGE', id: selectedEdgeId });
         return;
       }
 
@@ -32,5 +33,5 @@ export function useKeyboard() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [dispatch, selectedId, selectedRegionId]);
+  }, [dispatch, selectedId, selectedRegionId, selectedEdgeId]);
 }

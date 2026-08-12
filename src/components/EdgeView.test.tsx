@@ -38,6 +38,19 @@ describe('EdgeView', () => {
     expect(path.getAttribute('stroke')).toBe('#4f8cff');
   });
 
+  it('omits the start marker for a one-way edge', () => {
+    const { container } = renderEdge();
+    const path = container.querySelector('path.edge')!;
+    expect(path.getAttribute('marker-start')).toBeNull();
+    expect(path.getAttribute('marker-end')).toBe('url(#arrow)');
+  });
+
+  it('renders a start marker too when the edge is bidirectional', () => {
+    const { container } = renderEdge({ edge: { ...edge, bidirectional: true } });
+    const path = container.querySelector('path.edge')!;
+    expect(path.getAttribute('marker-start')).toBe('url(#arrow)');
+  });
+
   it('renders the edge label at the path midpoint', () => {
     const { container } = renderEdge();
     const text = container.querySelector('text.edge-label')!;

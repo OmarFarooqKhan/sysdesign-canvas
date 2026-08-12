@@ -46,6 +46,14 @@ describe('graphReducer edges', () => {
     expect(graphReducer(s, { type: 'LABEL_EDGE', id: 'e1', label: 'hi' }).edges[0].label).toBe('hi');
     expect(graphReducer(s, { type: 'DELETE_EDGE', id: 'e1' }).edges).toHaveLength(0);
   });
+  it('toggles an edge between one-way and bidirectional', () => {
+    const s = base();
+    const on = graphReducer(s, { type: 'TOGGLE_EDGE_DIRECTION', id: 'e1' });
+    expect(on.edges[0].bidirectional).toBe(true);
+    const off = graphReducer(on, { type: 'TOGGLE_EDGE_DIRECTION', id: 'e1' });
+    expect(off.edges[0].bidirectional).toBe(false);
+    expect(graphReducer(s, { type: 'TOGGLE_EDGE_DIRECTION', id: 'nope' }).edges[0].bidirectional).toBeUndefined();
+  });
 });
 
 describe('graphReducer regions', () => {

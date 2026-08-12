@@ -18,6 +18,7 @@ export interface Edge {
   from: string;
   to: string;
   label: string;
+  bidirectional?: boolean;
 }
 
 export interface Region {

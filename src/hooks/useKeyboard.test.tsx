@@ -8,7 +8,7 @@ import { useKeyboard } from './useKeyboard';
 /** Test-only harness exposing seed/select actions and live counts. */
 function Harness() {
   const { state, dispatch } = useGraph();
-  const { selectNode, selectRegion } = useUI();
+  const { selectNode, selectRegion, selectEdge } = useUI();
   useKeyboard();
   return (
     <div>
@@ -18,8 +18,11 @@ function Harness() {
       <button onClick={() => selectNode('n1')}>select-node</button>
       <button onClick={() => dispatch({ type: 'ADD_REGION' })}>add-region</button>
       <button onClick={() => selectRegion('r1')}>select-region</button>
+      <button onClick={() => dispatch({ type: 'ADD_EDGE', from: 'a', to: 'b' })}>add-edge</button>
+      <button onClick={() => selectEdge('e1')}>select-edge</button>
       <span data-testid="node-count">{Object.keys(state.nodes).length}</span>
       <span data-testid="region-count">{state.regions.length}</span>
+      <span data-testid="edge-count">{state.edges.length}</span>
       <div contentEditable data-testid="editable" suppressContentEditableWarning>
         edit
       </div>
@@ -54,6 +57,15 @@ describe('useKeyboard', () => {
     await user.click(screen.getByText('select-region'));
     fireEvent.keyDown(document, { key: 'Backspace' });
     expect(screen.getByTestId('region-count')).toHaveTextContent('0');
+  });
+
+  it('Delete removes the selected edge', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-edge'));
+    await user.click(screen.getByText('select-edge'));
+    fireEvent.keyDown(document, { key: 'Delete' });
+    expect(screen.getByTestId('edge-count')).toHaveTextContent('0');
   });
 
   it('Delete with nothing selected does nothing', async () => {

@@ -81,6 +81,33 @@ describe('EdgeLayer', () => {
     expect(probeState!.edges[0].label).toBe('calls');
   });
 
+  it('toggles an edge to bidirectional and back via the menu item', () => {
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    const toggleOn = Array.from(document.querySelectorAll('.ctx button')).find((b) =>
+      b.textContent?.includes('Bidirectional'),
+    )!;
+    fireEvent.click(toggleOn);
+    expect(probeState!.edges[0].bidirectional).toBe(true);
+
+    fireEvent.click(container.querySelector('path.edge')!);
+    const toggleOff = Array.from(document.querySelectorAll('.ctx button')).find((b) =>
+      b.textContent?.includes('One-way'),
+    )!;
+    fireEvent.click(toggleOff);
+    expect(probeState!.edges[0].bidirectional).toBe(false);
+  });
+
+  it('keeps the edge highlighted as selected after the menu closes', () => {
+    const { container } = renderLayer(seed());
+    const path = container.querySelector('path.edge')!;
+    fireEvent.click(path);
+    expect(path.getAttribute('stroke')).toBe('#4f8cff');
+    fireEvent.click(document.body);
+    expect(document.querySelector('.ctx')).toBeFalsy();
+    expect(path.getAttribute('stroke')).toBe('#4f8cff');
+  });
+
   it('deletes the edge via the Delete edge menu item', () => {
     const { container } = renderLayer(seed());
     fireEvent.click(container.querySelector('path.edge')!);
