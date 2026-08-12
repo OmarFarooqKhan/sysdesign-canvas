@@ -251,7 +251,16 @@ describe('NodeView', () => {
     const { container } = renderNodes(initial);
     const box = container.querySelector('[data-id="n2"] .box')!;
     fireEvent.doubleClick(box);
-    expect(container.querySelector('.db-modal')).not.toBeNull();
+    expect(document.querySelector('.db-modal')).not.toBeNull();
+  });
+
+  it('portals the schema editor onto document.body, outside the node (so no other node can stack over it)', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    fireEvent.doubleClick(container.querySelector('[data-id="n2"] .box')!);
+    const backdrop = document.querySelector('.db-backdrop')!;
+    expect(backdrop.closest('.node')).toBeNull();
+    expect(backdrop.parentElement).toBe(document.body);
   });
 
   it('double-clicking the box of a non-DB node does not open the schema editor', () => {
@@ -259,7 +268,7 @@ describe('NodeView', () => {
     const { container } = renderNodes(initial);
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.doubleClick(box);
-    expect(container.querySelector('.db-modal')).toBeNull();
+    expect(document.querySelector('.db-modal')).toBeNull();
   });
 
   it('double-clicking the port does not open the schema editor', () => {
@@ -267,7 +276,7 @@ describe('NodeView', () => {
     const { container } = renderNodes(initial);
     const port = container.querySelector('[data-id="n2"] .port')!;
     fireEvent.doubleClick(port);
-    expect(container.querySelector('.db-modal')).toBeNull();
+    expect(document.querySelector('.db-modal')).toBeNull();
   });
 
   it('closing the schema editor (Escape) removes it without touching state', () => {
@@ -275,9 +284,9 @@ describe('NodeView', () => {
     const { container } = renderNodes(initial);
     const box = container.querySelector('[data-id="n2"] .box')!;
     fireEvent.doubleClick(box);
-    expect(container.querySelector('.db-modal')).not.toBeNull();
+    expect(document.querySelector('.db-modal')).not.toBeNull();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(container.querySelector('.db-modal')).toBeNull();
+    expect(document.querySelector('.db-modal')).toBeNull();
     expect(probeState!.nodes.n2.db).toBeUndefined();
   });
 });

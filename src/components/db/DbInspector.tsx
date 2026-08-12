@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { GraphNode } from '../../types';
 import { useGraph } from '../../store/GraphContext';
 import { addTable, removeTable, updateTable } from './dbModel';
@@ -20,7 +21,12 @@ export function DbInspector({ node, onClose }: { node: GraphNode; onClose: () =>
     onClose();
   };
 
-  return (
+  // Portaled onto document.body: NodeView.tsx renders this inside a .node div, which sits inside
+  // .canvas-inner's zoomed/transformed layer. That transform makes .canvas-inner both a new
+  // stacking context (trapping the modal behind sibling nodes despite its high z-index) and the
+  // containing block for `.db-backdrop`'s `position: fixed` (breaking full-viewport coverage).
+  // Escaping to document.body sidesteps both.
+  return createPortal(
     <div className="db-backdrop" onMouseDown={onClose}>
       <div className="db-modal" onMouseDown={(e) => e.stopPropagation()}>
         <h3>DB schema — {node.label}</h3>
@@ -38,6 +44,7 @@ export function DbInspector({ node, onClose }: { node: GraphNode; onClose: () =>
           <button type="button" className="primary" onClick={handleSave}>Save</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -44,8 +44,8 @@ describe('DbInspector', () => {
 
   it('closes without dispatching on backdrop click / Cancel button', () => {
     const onClose = vi.fn();
-    const { container } = renderInspector(onClose);
-    fireEvent.mouseDown(container.querySelector('.db-backdrop')!);
+    renderInspector(onClose);
+    fireEvent.mouseDown(document.querySelector('.db-backdrop')!);
     expect(onClose).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalledTimes(2);
@@ -54,8 +54,8 @@ describe('DbInspector', () => {
 
   it('does not close when clicking inside the modal body', () => {
     const onClose = vi.fn();
-    const { container } = renderInspector(onClose);
-    fireEvent.mouseDown(container.querySelector('.db-modal')!);
+    renderInspector(onClose);
+    fireEvent.mouseDown(document.querySelector('.db-modal')!);
     expect(onClose).not.toHaveBeenCalled();
   });
 
