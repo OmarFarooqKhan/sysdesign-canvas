@@ -63,7 +63,8 @@ sysdesign-canvas/
 │   │   ├── NodeView.tsx
 │   │   ├── Palette.tsx          # draggable component palette sidebar
 │   │   ├── RegionView.tsx
-│   │   └── Toolbar.tsx
+│   │   ├── Toolbar.tsx
+│   │   └── ZoomControls.tsx     # floating zoom cluster (bottom-right of the canvas)
 │   ├── data/
 │   │   ├── icons.ts              # icon set for palette/nodes
 │   │   ├── palette.ts             # palette entries (component types)
@@ -74,10 +75,12 @@ sysdesign-canvas/
 │   ├── lib/
 │   │   ├── dom.ts                    # small DOM helpers
 │   │   ├── geometry.ts                # node/port/edge coordinate math
-│   │   └── io.ts                       # JSON export/import (download/parse/toData)
+│   │   ├── io.ts                       # JSON export/import (download/parse/toData)
+│   │   └── viewport.ts                  # zoom clamp/step, coordinate conversion, fit-to-view
 │   ├── store/
 │   │   ├── GraphContext.tsx            # undoable graph state provider
 │   │   ├── UIContext.tsx                # non-undoable UI state provider
+│   │   ├── ViewportContext.tsx           # non-undoable, non-serialized zoom/pan/pan-mode state
 │   │   ├── actions.ts                    # graph action creators + helpers
 │   │   ├── graphReducer.ts                # pure reducer for graph actions
 │   │   └── history.ts                      # generic useReducer undo/redo wrapper

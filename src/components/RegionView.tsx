@@ -3,12 +3,14 @@ import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { Region } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
+import { useViewport } from '../store/ViewportContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { textOf } from '../lib/dom';
 
 export function RegionView({ region }: { region: Region }) {
   const { dispatch } = useGraph();
   const { selectedRegionId, selectRegion } = useUI();
+  const { zoom } = useViewport();
   const [editable, setEditable] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const startPos = useRef({ x: region.x, y: region.y });
@@ -20,7 +22,7 @@ export function RegionView({ region }: { region: Region }) {
     onStart: () => { startPos.current = { x: region.x, y: region.y }; },
     onMove: (dx, dy) => dispatch({
       type: 'MOVE_REGION', id: region.id,
-      x: Math.max(0, startPos.current.x + dx), y: Math.max(0, startPos.current.y + dy),
+      x: Math.max(0, startPos.current.x + dx / zoom), y: Math.max(0, startPos.current.y + dy / zoom),
     }),
     onEnd: endSession,
   });
@@ -29,7 +31,7 @@ export function RegionView({ region }: { region: Region }) {
     onStart: () => { startSize.current = { w: region.w, h: region.h }; },
     onMove: (dx, dy) => dispatch({
       type: 'RESIZE_REGION', id: region.id,
-      w: startSize.current.w + dx, h: startSize.current.h + dy,
+      w: startSize.current.w + dx / zoom, h: startSize.current.h + dy / zoom,
     }),
     onEnd: endSession,
   });
