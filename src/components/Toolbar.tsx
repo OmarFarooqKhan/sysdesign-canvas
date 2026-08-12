@@ -6,6 +6,7 @@ import { contentBounds, fitTransform } from '../lib/viewport';
 import { TEMPLATE_OPTIONS, templateToData } from '../data/templates';
 import type { TemplateKey } from '../data/templates';
 import { toData, download, parse } from '../lib/io';
+import { exportPng } from '../lib/exportPng';
 
 /** Top header bar: templates, region/edge tools, undo/redo, import/export, clear. */
 export function Toolbar() {
@@ -37,7 +38,11 @@ export function Toolbar() {
     dispatch({ type: 'ADD_REGION', region: { x: 60 + Math.random() * 40, y: 60 + Math.random() * 40 } });
   };
 
-  const handleExport = () => download(toData(state, edgeMode));
+  const handleExportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === 'json') download(toData(state, edgeMode));
+    else if (e.target.value === 'png') exportPng(state, canvasRef.current);
+    e.target.value = '';
+  };
 
   const handleImportClick = () => fileInputRef.current?.click();
 
@@ -72,27 +77,19 @@ export function Toolbar() {
         ))}
       </select>
       <button onClick={handleAddRegion}>+ Region</button>
-      <button onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
+      <button aria-pressed={edgeMode === 'ortho'} className={edgeMode === 'ortho' ? 'active' : undefined} onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
       <button onClick={handleFit}>⤢ Fit</button>
-      <button
-        aria-pressed={panMode}
-        className={panMode ? 'active' : undefined}
-        onClick={togglePanMode}
-      >
-        ✋ Pan
-      </button>
-      <button disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })}>Undo</button>
+      <button aria-pressed={panMode} className={panMode ? 'active' : undefined} onClick={togglePanMode}>✋ Pan</button>
+      <button className="group-start" disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })}>Undo</button>
       <button disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })}>Redo</button>
-      <button onClick={handleExport}>Export JSON</button>
+      <select className="group-start" defaultValue="" onChange={handleExportChange} aria-label="Export">
+        <option value="">Export…</option>
+        <option value="json">as JSON</option>
+        <option value="png">as PNG</option>
+      </select>
       <button onClick={handleImportClick}>Import</button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
-      <button className="danger" onClick={handleClear}>Clear</button>
+      <input ref={fileInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={handleFileChange} />
+      <button className="group-start danger" onClick={handleClear}>Clear</button>
     </header>
   );
 }

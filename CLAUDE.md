@@ -84,6 +84,7 @@ sysdesign-canvas/
 │   ├── lib/
 │   │   ├── dom.ts                    # small DOM helpers
 │   │   ├── edgeBend.ts                # edge midpoint/bend-delta helpers for drag-to-bend
+│   │   ├── exportPng.ts                # rasterize .canvas-inner to a content-bounded PNG (html-to-image)
 │   │   ├── geometry.ts                 # node/edge coordinate math (anchors, insets, paths)
 │   │   ├── io.ts                        # JSON export/import (download/parse/toData)
 │   │   ├── selection.ts                  # rect math + node snapshot helpers (marquee, group move)

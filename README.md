@@ -19,7 +19,7 @@ regions, undo/redo your changes, and export/import as JSON.
   indexes, and constraints
 - Undo/redo (Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z or Ctrl+Y), Delete to remove the
   selection
-- Export/import the graph as JSON, plus starter templates
+- Export/import the graph as JSON, export a PNG snapshot, plus starter templates
 
 ## Develop
 

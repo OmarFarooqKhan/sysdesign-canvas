@@ -7,6 +7,9 @@ import { useGraph } from '../../store/GraphContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { Toolbar } from '../../components/Toolbar';
 
+const { exportPngMock } = vi.hoisted(() => ({ exportPngMock: vi.fn() }));
+vi.mock('../../lib/exportPng', () => ({ exportPng: exportPngMock }));
+
 /** Test-only harness: exposes a seed action + live node count alongside the Toolbar. */
 function Harness({ withCanvasRef = true }: { withCanvasRef?: boolean }) {
   const { state, dispatch } = useGraph();
@@ -48,6 +51,7 @@ describe('Toolbar', () => {
   let alertSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    exportPngMock.mockClear();
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     (URL as unknown as { createObjectURL: typeof URL.createObjectURL }).createObjectURL = vi.fn(() => 'blob:mock');
@@ -97,15 +101,21 @@ describe('Toolbar', () => {
     expect(undoBtn).toBeEnabled();
   });
 
-  it('edge toggle flips label', async () => {
+  it('edge toggle flips label, aria-pressed and the active class', async () => {
     const user = userEvent.setup();
     renderHarness();
     const edgeBtn = screen.getByRole('button', { name: /^Edges:/ });
     expect(edgeBtn).toHaveTextContent('Edges: Curved');
+    expect(edgeBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(edgeBtn).not.toHaveClass('active');
     await user.click(edgeBtn);
     expect(edgeBtn).toHaveTextContent('Edges: Orthogonal');
+    expect(edgeBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(edgeBtn).toHaveClass('active');
     await user.click(edgeBtn);
     expect(edgeBtn).toHaveTextContent('Edges: Curved');
+    expect(edgeBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(edgeBtn).not.toHaveClass('active');
   });
 
   it('template select without existing nodes loads without confirm', async () => {
@@ -150,13 +160,34 @@ describe('Toolbar', () => {
     expect(edgeBtn).toHaveTextContent('Edges: Orthogonal');
   });
 
-  it('export triggers a download', async () => {
+  it('export select: "as JSON" triggers a download and resets to blank', async () => {
     const user = userEvent.setup();
     renderHarness();
-    await user.click(screen.getByRole('button', { name: 'Export JSON' }));
+    const select = screen.getByRole('combobox', { name: 'Export' });
+    await user.selectOptions(select, 'json');
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+    expect((select as HTMLSelectElement).value).toBe('');
+  });
+
+  it('export select: "as PNG" calls exportPng with the current state and canvas element', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    const select = screen.getByRole('combobox', { name: 'Export' });
+    await user.selectOptions(select, 'png');
+    expect(exportPngMock).toHaveBeenCalledTimes(1);
+    expect(exportPngMock.mock.calls[0][1]).toBe(screen.getByTestId('canvas-rect'));
+    expect((select as HTMLSelectElement).value).toBe('');
+  });
+
+  it('export select: blank option is a no-op', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Export' }), 'json');
+    await user.selectOptions(screen.getByLabelText('Export'), '');
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(exportPngMock).not.toHaveBeenCalled();
   });
 
   it('import button click opens the hidden file input', async () => {

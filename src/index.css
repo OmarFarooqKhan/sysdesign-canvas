@@ -55,6 +55,7 @@ header select {
   cursor: pointer;
 }
 header select:hover { background: #263049; }
+header .group-start { margin-left: 4px; padding-left: 14px; border-left: 1px solid var(--border); }
 
 .layout { flex: 1; display: flex; min-height: 0; }
 
