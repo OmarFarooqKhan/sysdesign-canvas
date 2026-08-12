@@ -49,44 +49,55 @@ sysdesign-canvas/
 ├── src/
 │   ├── main.tsx              # Vite entry point, mounts <App>
 │   ├── App.tsx                # top-level layout, wires providers + Canvas
-│   ├── types.ts                # shared domain types (GraphState, GraphNode, Edge, ...)
+│   ├── types.ts                # shared domain types (GraphState, GraphNode, Edge, DbTable, ...)
 │   ├── vite-env.d.ts
 │   ├── index.css               # global styles
 │   ├── components/
 │   │   ├── Canvas.tsx           # main drop/drag surface (integration glue, untested directly)
 │   │   ├── ContextMenu.tsx
 │   │   ├── EdgeLayer.tsx        # renders all edges + handles edge interactions
-│   │   ├── EdgeView.tsx         # single edge (path + arrowhead)
+│   │   ├── EdgeView.tsx         # single edge (path + arrowhead + drag-to-bend)
 │   │   ├── EmptyState.tsx
 │   │   ├── Icon.tsx
 │   │   ├── LinkPreview.tsx      # in-progress link-drag preview arrow
+│   │   ├── Marquee.tsx          # drag-to-select rectangle (+ useMarquee hook)
 │   │   ├── NodeView.tsx
 │   │   ├── Palette.tsx          # draggable component palette sidebar
 │   │   ├── RegionView.tsx
 │   │   ├── Toolbar.tsx
-│   │   └── ZoomControls.tsx     # floating zoom cluster (bottom-right of the canvas)
+│   │   ├── ZoomControls.tsx     # floating zoom cluster (bottom-right of the canvas)
+│   │   └── db/                  # SQL DB node schema editor (opened via node double-click)
+│   │       ├── ColumnRow.tsx
+│   │       ├── DbInspector.tsx    # modal shell: open/save/cancel/Escape
+│   │       ├── StringList.tsx     # shared indexes/constraints chip editor
+│   │       ├── TableEditor.tsx
+│   │       └── dbModel.ts          # pure table/column CRUD helpers, isDbNode, dbTableCount
 │   ├── data/
 │   │   ├── icons.ts              # icon set for palette/nodes
 │   │   ├── palette.ts             # palette entries (component types)
 │   │   └── templates.ts            # starter graph templates
 │   ├── hooks/
-│   │   ├── useKeyboard.ts          # undo/redo/delete keyboard shortcuts
-│   │   └── usePointerDrag.ts        # shared pointer drag/resize/session logic
+│   │   ├── useKeyboard.ts          # undo/redo/delete (incl. group delete) shortcuts
+│   │   ├── useLinkDrag.ts           # port-to-port edge-creation drag, per NodeView
+│   │   ├── useNodeDrag.ts            # node drag, incl. group move for a multi-selection
+│   │   └── usePointerDrag.ts          # shared pointer drag/resize/session logic
 │   ├── lib/
 │   │   ├── dom.ts                    # small DOM helpers
-│   │   ├── geometry.ts                # node/port/edge coordinate math
-│   │   ├── io.ts                       # JSON export/import (download/parse/toData)
-│   │   └── viewport.ts                  # zoom clamp/step, coordinate conversion, fit-to-view
+│   │   ├── edgeBend.ts                # edge midpoint/bend-delta helpers for drag-to-bend
+│   │   ├── geometry.ts                 # node/edge coordinate math (anchors, insets, paths)
+│   │   ├── io.ts                        # JSON export/import (download/parse/toData)
+│   │   ├── selection.ts                  # rect math + node snapshot helpers (marquee, group move)
+│   │   └── viewport.ts                    # zoom clamp/step, coordinate conversion, fit-to-view
 │   ├── store/
 │   │   ├── GraphContext.tsx            # undoable graph state provider
-│   │   ├── UIContext.tsx                # non-undoable UI state provider
+│   │   ├── UIContext.tsx                # non-undoable UI state (selection incl. multi-select)
 │   │   ├── ViewportContext.tsx           # non-undoable, non-serialized zoom/pan/pan-mode state
 │   │   ├── actions.ts                    # graph action creators + helpers
 │   │   ├── graphReducer.ts                # pure reducer for graph actions
 │   │   └── history.ts                      # generic useReducer undo/redo wrapper
 │   └── test/                                # ALL tests live here, mirroring src/ subfolders
 │       ├── setup.ts                          # RTL/jest-dom setup (wired via vitest.config.ts)
-│       ├── components/*.test.tsx
+│       ├── components/*.test.tsx (+ db/*.test.tsx)
 │       ├── data/templates.test.ts
 │       ├── hooks/*.test.tsx
 │       ├── lib/*.test.ts
@@ -96,7 +107,7 @@ sysdesign-canvas/
 │   └── workflows/deploy.yml     # push to main → audit → test → build → deploy (GitHub Pages)
 ├── index.html
 ├── vite.config.ts
-├── vitest.config.ts             # coverage thresholds (100%), setupFiles, excludes
+├── vitest.config.ts             # coverage thresholds (100%), setupFiles, excludes .claude/ worktrees
 ├── tsconfig.json                # strict, noUnusedLocals/Parameters, no emit
 ├── package.json
 └── README.md
