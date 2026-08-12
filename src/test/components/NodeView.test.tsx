@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider } from '../../store/UIContext';
+import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { NodeView } from '../../components/NodeView';
 import type { GraphState } from '../../types';
 
@@ -24,13 +25,21 @@ function Probe() {
   return null;
 }
 
+function ZoomProbe() {
+  const { setViewport } = useViewport();
+  return <button data-testid="zoom-2x" onClick={() => setViewport({ zoom: 2 })} />;
+}
+
 function renderNodes(initial: GraphState) {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
-        <Probe />
-        <NodeView node={initial.nodes.n1} />
-        <NodeView node={initial.nodes.n2} />
+        <ViewportProvider>
+          <Probe />
+          <ZoomProbe />
+          <NodeView node={initial.nodes.n1} />
+          <NodeView node={initial.nodes.n2} />
+        </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
   );
@@ -47,6 +56,18 @@ describe('NodeView', () => {
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n1.x).toBe(150);
     expect(probeState!.nodes.n1.y).toBe(130);
+  });
+
+  it('divides the drag delta by zoom', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    fireEvent.click(container.querySelector('[data-testid="zoom-2x"]')!);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 120 });
+    fireEvent.mouseUp(document);
+    expect(probeState!.nodes.n1.x).toBe(120);
+    expect(probeState!.nodes.n1.y).toBe(110);
   });
 
   it('clamps position to non-negative', () => {
@@ -111,18 +132,19 @@ describe('NodeView', () => {
     const n2Root = container.querySelector('[data-id="n2"]')!;
     fireEvent.mouseDown(port, { clientX: 190, clientY: 130 });
     fireEvent.mouseMove(document, { clientX: 300, clientY: 150 });
-    const line = container.querySelector('svg[style*="position: fixed"] line')!;
-    // the line must stay anchored at the port (press point) and follow the cursor,
-    // not collapse to a zero-length point at the current mouse position.
-    expect(line.getAttribute('x1')).toBe('190');
-    expect(line.getAttribute('y1')).toBe('130');
-    expect(line.getAttribute('x2')).toBe('300');
-    expect(line.getAttribute('y2')).toBe('150');
+    // temp line lives inside n1's own root, in coordinates local to n1's origin
+    // (n1 is at x:100,y:100; with no canvas rect yet it falls back to a raw client delta).
+    const n1Root = container.querySelector('[data-id="n1"]')!;
+    const line = n1Root.querySelector('svg line')!;
+    expect(line.getAttribute('x1')).toBe('90');
+    expect(line.getAttribute('y1')).toBe('30');
+    expect(line.getAttribute('x2')).toBe('200');
+    expect(line.getAttribute('y2')).toBe('50');
     fireEvent.mouseMove(document, { clientX: 320, clientY: 160 });
-    expect(line.getAttribute('x1')).toBe('190');
-    expect(line.getAttribute('y1')).toBe('130');
-    expect(line.getAttribute('x2')).toBe('320');
-    expect(line.getAttribute('y2')).toBe('160');
+    expect(line.getAttribute('x1')).toBe('90');
+    expect(line.getAttribute('y1')).toBe('30');
+    expect(line.getAttribute('x2')).toBe('220');
+    expect(line.getAttribute('y2')).toBe('60');
     fireEvent.mouseUp(n2Root);
     expect(probeState!.edges.length).toBe(1);
     expect(probeState!.edges[0]).toMatchObject({ from: 'n1', to: 'n2' });

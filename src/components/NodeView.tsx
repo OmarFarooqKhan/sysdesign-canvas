@@ -3,7 +3,9 @@ import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { GraphNode } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
+import { useViewport } from '../store/ViewportContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
+import { screenToLocal } from '../lib/viewport';
 import { textOf } from '../lib/dom';
 import { Icon } from './Icon';
 import { LinkPreview } from './LinkPreview';
@@ -14,6 +16,7 @@ let linkSource: string | null = null;
 export function NodeView({ node }: { node: GraphNode }) {
   const { dispatch } = useGraph();
   const { selectedId, selectNode } = useUI();
+  const { zoom, panX, panY, canvasRef } = useViewport();
   const startRef = useRef({ x: node.x, y: node.y });
   const linkStartRef = useRef({ x: 0, y: 0 });
   const labelRef = useRef<HTMLDivElement>(null);
@@ -21,20 +24,25 @@ export function NodeView({ node }: { node: GraphNode }) {
   const [editing, setEditing] = useState(false);
   const [tempLine, setTempLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
+  /** Client coords -> canvas coords, relative to this node's own x/y (see LinkPreview). */
+  const toLocal = (clientX: number, clientY: number) =>
+    screenToLocal(clientX, clientY, canvasRef.current?.getBoundingClientRect(), { zoom, panX, panY }, node.x, node.y);
+
   const dragNode = usePointerDrag({
     onStart: () => { startRef.current = { x: node.x, y: node.y }; },
     onMove: (dx, dy) => dispatch({
       type: 'MOVE_NODE', id: node.id,
-      x: Math.max(0, startRef.current.x + dx), y: Math.max(0, startRef.current.y + dy),
+      x: Math.max(0, startRef.current.x + dx / zoom), y: Math.max(0, startRef.current.y + dy / zoom),
     }),
     onEnd: () => dispatch({ type: 'END_SESSION' }),
   });
 
   const dragLink = usePointerDrag({
     onStart: () => { linkSource = node.id; setLinking(true); },
-    onMove: (_dx, _dy, ev) => setTempLine({
-      x1: linkStartRef.current.x, y1: linkStartRef.current.y, x2: ev.clientX, y2: ev.clientY,
-    }),
+    onMove: (_dx, _dy, ev) => {
+      const p = toLocal(ev.clientX, ev.clientY);
+      setTempLine({ x1: linkStartRef.current.x, y1: linkStartRef.current.y, x2: p.x, y2: p.y });
+    },
     onEnd: () => {
       setLinking(false);
       setTempLine(null);
@@ -49,7 +57,7 @@ export function NodeView({ node }: { node: GraphNode }) {
   };
 
   const onPortMouseDown = (e: ReactMouseEvent) => {
-    linkStartRef.current = { x: e.clientX, y: e.clientY };
+    linkStartRef.current = toLocal(e.clientX, e.clientY);
     dragLink(e);
   };
 

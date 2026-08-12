@@ -44,6 +44,7 @@ header button {
 header button:hover:not(:disabled) { background: #263049; border-color: #3a4a6b; }
 header button:disabled { opacity: .4; cursor: default; }
 header button.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+header button.active { border-color: var(--accent); color: var(--accent); background: #1c2740; }
 header select {
   background: var(--panel-2);
   color: var(--text);
@@ -97,9 +98,43 @@ header select:hover { background: #263049; }
   background-image: radial-gradient(circle, #232c42 1px, transparent 1px);
   background-size: 22px 22px;
 }
+.canvas.pan-mode { cursor: grab; }
+.canvas.pan-mode:active { cursor: grabbing; }
+.canvas-inner { position: absolute; inset: 0; }
 svg.edges { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 svg.edges path.edge { pointer-events: stroke; cursor: pointer; }
 svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
+
+.zoom-controls {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  opacity: .35;
+  transition: opacity .15s;
+}
+.zoom-controls:hover, .zoom-controls:focus-within { opacity: 1; }
+.zoom-controls button {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.zoom-controls button:hover:not(:disabled) { background: #263049; border-color: #3a4a6b; }
+.zoom-controls button:disabled { opacity: .4; cursor: default; }
+.zoom-controls .zoom-pct { font-size: 11.5px; color: var(--muted); min-width: 34px; text-align: center; }
 
 .node {
   position: absolute;

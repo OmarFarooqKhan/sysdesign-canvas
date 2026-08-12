@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
+import { useViewport } from '../store/ViewportContext';
+import { contentBounds, fitTransform } from '../lib/viewport';
 import { TEMPLATE_OPTIONS, templateToData } from '../data/templates';
 import type { TemplateKey } from '../data/templates';
 import { toData, download, parse } from '../lib/io';
@@ -9,7 +11,15 @@ import { toData, download, parse } from '../lib/io';
 export function Toolbar() {
   const { state, dispatch, canUndo, canRedo } = useGraph();
   const { edgeMode, toggleEdgeMode, setEdgeMode } = useUI();
+  const { panMode, togglePanMode, setViewport, canvasRef } = useViewport();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFit = () => {
+    const bounds = contentBounds(state);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!bounds || !rect) return;
+    setViewport(fitTransform(bounds, rect.width, rect.height));
+  };
 
   const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const key = e.target.value as TemplateKey | '';
@@ -63,6 +73,14 @@ export function Toolbar() {
       </select>
       <button onClick={handleAddRegion}>+ Region</button>
       <button onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
+      <button onClick={handleFit}>⤢ Fit</button>
+      <button
+        aria-pressed={panMode}
+        className={panMode ? 'active' : undefined}
+        onClick={togglePanMode}
+      >
+        ✋ Pan
+      </button>
       <button disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })}>Undo</button>
       <button disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })}>Redo</button>
       <button onClick={handleExport}>Export JSON</button>

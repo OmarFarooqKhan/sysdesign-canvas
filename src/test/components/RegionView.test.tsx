@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import type { GraphState } from '../../types';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
+import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { RegionView } from '../../components/RegionView';
 
 const region = { id: 'r1', title: 'Backend', x: 100, y: 100, w: 260, h: 180, color: '#34d399' };
@@ -18,13 +19,21 @@ function SelectProbe() {
   return <button data-testid="select-r1" onClick={() => selectRegion('r1')} />;
 }
 
+function ZoomProbe() {
+  const { setViewport } = useViewport();
+  return <button data-testid="zoom-2x" onClick={() => setViewport({ zoom: 2 })} />;
+}
+
 function setup() {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
-        <Probe />
-        <SelectProbe />
-        <RegionView region={region} />
+        <ViewportProvider>
+          <Probe />
+          <SelectProbe />
+          <ZoomProbe />
+          <RegionView region={region} />
+        </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
   );
@@ -79,6 +88,26 @@ describe('RegionView', () => {
     const probe = JSON.parse(screen.getByTestId('probe').textContent!);
     expect(probe.w).toBe(120);
     expect(probe.h).toBe(90);
+  });
+
+  it('divides move and resize deltas by zoom', () => {
+    setup();
+    fireEvent.click(screen.getByTestId('zoom-2x'));
+    const title = document.querySelector('.r-title')!;
+    fireEvent.mouseDown(title, { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 40, clientY: 60 });
+    fireEvent.mouseUp(document, { clientX: 40, clientY: 60 });
+    const probe = JSON.parse(screen.getByTestId('probe').textContent!);
+    expect(probe.x).toBe(120);
+    expect(probe.y).toBe(130);
+
+    const handle = document.querySelector('.r-resize')!;
+    fireEvent.mouseDown(handle, { clientX: 0, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 20, clientY: 10 });
+    fireEvent.mouseUp(document, { clientX: 20, clientY: 10 });
+    const probe2 = JSON.parse(screen.getByTestId('probe').textContent!);
+    expect(probe2.w).toBe(270);
+    expect(probe2.h).toBe(185);
   });
 
   it('resizes normally within bounds', () => {

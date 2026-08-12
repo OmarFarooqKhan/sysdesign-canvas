@@ -4,11 +4,13 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { GraphProvider } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
 import { useGraph } from '../../store/GraphContext';
+import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { Toolbar } from '../../components/Toolbar';
 
 /** Test-only harness: exposes a seed action + live node count alongside the Toolbar. */
-function Harness() {
+function Harness({ withCanvasRef = true }: { withCanvasRef?: boolean }) {
   const { state, dispatch } = useGraph();
+  const { zoom, panX, panY } = useViewport();
   return (
     <>
       <button onClick={() => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'Server' }, x: 10, y: 10 })}>
@@ -16,16 +18,26 @@ function Harness() {
       </button>
       <span data-testid="node-count">{Object.keys(state.nodes).length}</span>
       <span data-testid="edge-mode">{useUI().edgeMode}</span>
+      <span data-testid="viewport">{`${zoom},${panX},${panY}`}</span>
+      {withCanvasRef && <CanvasRefProbe />}
       <Toolbar />
     </>
   );
+}
+
+/** Stands in for Canvas.tsx's root div, which Toolbar's Fit button measures via canvasRef. */
+function CanvasRefProbe() {
+  const { canvasRef } = useViewport();
+  return <div ref={canvasRef} data-testid="canvas-rect" />;
 }
 
 function renderHarness() {
   return render(
     <GraphProvider>
       <UIProvider>
-        <Harness />
+        <ViewportProvider>
+          <Harness />
+        </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
   );
@@ -210,5 +222,54 @@ describe('Toolbar', () => {
     const input = document.querySelector('input[type=file]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [] } });
     expect(screen.getByTestId('node-count')).toHaveTextContent('0');
+  });
+
+  it('Fit is a no-op on an empty canvas', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    const rect = screen.getByTestId('canvas-rect');
+    vi.spyOn(rect, 'getBoundingClientRect').mockReturnValue({ width: 800, height: 600, left: 0, top: 0 } as DOMRect);
+    await user.click(screen.getByRole('button', { name: '⤢ Fit' }));
+    expect(screen.getByTestId('viewport')).toHaveTextContent('1,0,0');
+  });
+
+  it('Fit computes zoom/pan from content bounds and the canvas rect', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('seed-node'));
+    const rect = screen.getByTestId('canvas-rect');
+    vi.spyOn(rect, 'getBoundingClientRect').mockReturnValue({ width: 800, height: 600, left: 0, top: 0 } as DOMRect);
+    await user.click(screen.getByRole('button', { name: '⤢ Fit' }));
+    expect(screen.getByTestId('viewport')).toHaveTextContent('2,');
+  });
+
+  it('Fit is a no-op when the canvas ref is not attached', async () => {
+    const user = userEvent.setup();
+    render(
+      <GraphProvider>
+        <UIProvider>
+          <ViewportProvider>
+            <Harness withCanvasRef={false} />
+          </ViewportProvider>
+        </UIProvider>
+      </GraphProvider>,
+    );
+    await user.click(screen.getByText('seed-node'));
+    await user.click(screen.getByRole('button', { name: '⤢ Fit' }));
+    expect(screen.getByTestId('viewport')).toHaveTextContent('1,0,0');
+  });
+
+  it('Pan toggle flips aria-pressed and the active class', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    const panBtn = screen.getByRole('button', { name: '✋ Pan' });
+    expect(panBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(panBtn).not.toHaveClass('active');
+    await user.click(panBtn);
+    expect(panBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(panBtn).toHaveClass('active');
+    await user.click(panBtn);
+    expect(panBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(panBtn).not.toHaveClass('active');
   });
 });
