@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Edge } from '../types';
 import { useGraph } from '../store/GraphContext';
@@ -21,6 +21,12 @@ export function EdgeLayer() {
     const rect = canvasRef.current!.getBoundingClientRect();
     setMenu({ edge, x: x - rect.left, y: y - rect.top });
   };
+
+  // The menu's edge can be deleted out from under it (e.g. the Delete key,
+  // which bypasses the menu's own onClose) — drop the menu once that happens.
+  useEffect(() => {
+    if (menu && !state.edges.some((e) => e.id === menu.edge.id)) setMenu(null);
+  }, [menu, state.edges]);
 
   const items = menu
     ? [

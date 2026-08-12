@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider } from '../../store/UIContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
@@ -19,8 +19,11 @@ function seed(): GraphState {
 }
 
 let probeState: GraphState | null = null;
+let probeDispatch: ReturnType<typeof useGraph>['dispatch'] | null = null;
 function Probe() {
-  probeState = useGraph().state;
+  const graph = useGraph();
+  probeState = graph.state;
+  probeDispatch = graph.dispatch;
   return null;
 }
 
@@ -144,6 +147,16 @@ describe('EdgeLayer', () => {
     expect(delBtn).toHaveClass('danger');
     fireEvent.click(delBtn);
     expect(probeState!.edges.length).toBe(0);
+  });
+
+  it('closes the menu when its edge is deleted some other way (e.g. the Delete key)', () => {
+    const { container } = renderLayer(seed());
+    fireEvent.click(container.querySelector('path.edge')!);
+    expect(document.querySelector('.ctx')).toBeTruthy();
+
+    // Mirrors useKeyboard's DELETE_EDGE dispatch, which bypasses the menu's own onClose.
+    act(() => probeDispatch!({ type: 'DELETE_EDGE', id: 'e1' }));
+    expect(document.querySelector('.ctx')).toBeFalsy();
   });
 
   it('closes the menu on outside click', () => {
