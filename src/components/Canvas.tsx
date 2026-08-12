@@ -1,18 +1,18 @@
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from 'react';
 import type { NodeDef } from '../types';
 import { useGraph } from '../store/GraphContext';
-import { useUI } from '../store/UIContext';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { EdgeLayer } from './EdgeLayer';
 import { NodeView } from './NodeView';
 import { RegionView } from './RegionView';
 import { EmptyState } from './EmptyState';
+import { Marquee, useMarquee } from './Marquee';
 
 /** The diagram surface: drop target for new nodes, hosts edges/regions/nodes. */
 export function Canvas() {
   const { state, dispatch } = useGraph();
-  const { clearSelection } = useUI();
   useKeyboard();
+  const { onMouseDown: startMarquee, rect: marqueeRect } = useMarquee();
 
   const onDrop = (e: ReactDragEvent) => {
     e.preventDefault();
@@ -24,7 +24,7 @@ export function Canvas() {
   };
 
   const onMouseDown = (e: ReactMouseEvent) => {
-    if (e.target === e.currentTarget) clearSelection();
+    if (e.target === e.currentTarget) startMarquee(e);
   };
 
   return (
@@ -38,6 +38,7 @@ export function Canvas() {
       {state.regions.map((r) => <RegionView key={r.id} region={r} />)}
       {Object.values(state.nodes).map((n) => <NodeView key={n.id} node={n} />)}
       <EmptyState />
+      <Marquee rect={marqueeRect} />
     </div>
   );
 }

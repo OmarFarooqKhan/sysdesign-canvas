@@ -5,6 +5,7 @@ import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { textOf } from '../lib/dom';
+import { nodeSnapshot, offsetSnapshot, type NodeSnapshot } from '../lib/geometry';
 import { Icon } from './Icon';
 import { LinkPreview } from './LinkPreview';
 
@@ -12,9 +13,10 @@ import { LinkPreview } from './LinkPreview';
 let linkSource: string | null = null;
 
 export function NodeView({ node }: { node: GraphNode }) {
-  const { dispatch } = useGraph();
-  const { selectedId, selectNode } = useUI();
+  const { state, dispatch } = useGraph();
+  const { selectedNodeIds, selectNode } = useUI();
   const startRef = useRef({ x: node.x, y: node.y });
+  const groupRef = useRef<NodeSnapshot[] | null>(null);
   const linkStartRef = useRef({ x: 0, y: 0 });
   const labelRef = useRef<HTMLDivElement>(null);
   const [linking, setLinking] = useState(false);
@@ -22,11 +24,14 @@ export function NodeView({ node }: { node: GraphNode }) {
   const [tempLine, setTempLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
 
   const dragNode = usePointerDrag({
-    onStart: () => { startRef.current = { x: node.x, y: node.y }; },
-    onMove: (dx, dy) => dispatch({
-      type: 'MOVE_NODE', id: node.id,
-      x: Math.max(0, startRef.current.x + dx), y: Math.max(0, startRef.current.y + dy),
-    }),
+    onStart: () => {
+      startRef.current = { x: node.x, y: node.y };
+      const isGroup = selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id);
+      groupRef.current = isGroup ? nodeSnapshot(state.nodes, selectedNodeIds) : null;
+    },
+    onMove: (dx, dy) => dispatch(groupRef.current
+      ? { type: 'MOVE_NODES', moves: offsetSnapshot(groupRef.current, dx, dy) }
+      : { type: 'MOVE_NODE', id: node.id, x: Math.max(0, startRef.current.x + dx), y: Math.max(0, startRef.current.y + dy) }),
     onEnd: () => dispatch({ type: 'END_SESSION' }),
   });
 
@@ -44,7 +49,8 @@ export function NodeView({ node }: { node: GraphNode }) {
 
   const onBoxMouseDown = (e: ReactMouseEvent) => {
     if ((e.target as HTMLElement).closest('.port')) return;
-    selectNode(node.id);
+    // Keep an existing multi-selection intact when starting a drag on one of its members.
+    if (!(selectedNodeIds.length > 1 && selectedNodeIds.includes(node.id))) selectNode(node.id);
     dragNode(e);
   };
 
@@ -67,7 +73,7 @@ export function NodeView({ node }: { node: GraphNode }) {
     if (e.key === 'Enter') { e.preventDefault(); labelRef.current?.blur(); }
   };
 
-  const cls = ['node', selectedId === node.id && 'selected', linking && 'linking'].filter(Boolean).join(' ');
+  const cls = ['node', selectedNodeIds.includes(node.id) && 'selected', linking && 'linking'].filter(Boolean).join(' ');
 
   return (
     <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>

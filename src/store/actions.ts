@@ -5,6 +5,7 @@ export const REGION_COLORS = ['#4f8cff', '#34d399', '#fbbf24', '#f87171', '#a78b
 export type GraphAction =
   | { type: 'ADD_NODE'; def: NodeDef; x: number; y: number }
   | { type: 'MOVE_NODE'; id: string; x: number; y: number }
+  | { type: 'MOVE_NODES'; moves: { id: string; x: number; y: number }[] }
   | { type: 'RENAME_NODE'; id: string; label: string }
   | { type: 'DELETE_NODE'; id: string }
   | { type: 'ADD_EDGE'; from: string; to: string; label?: string }
@@ -19,7 +20,7 @@ export type GraphAction =
   | { type: 'LOAD'; data: GraphData }
   | { type: 'CLEAR' };
 
-const SESSION_TYPES = new Set<GraphAction['type']>(['MOVE_NODE', 'MOVE_REGION', 'RESIZE_REGION']);
+const SESSION_TYPES = new Set<GraphAction['type']>(['MOVE_NODE', 'MOVE_NODES', 'MOVE_REGION', 'RESIZE_REGION']);
 
 /** Drag/resize actions coalesce into a single undo entry. */
 export const isSessionAction = (a: GraphAction): boolean => SESSION_TYPES.has(a.type);

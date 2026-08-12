@@ -14,6 +14,14 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
       if (!n) return s;
       return { ...s, nodes: { ...s.nodes, [a.id]: { ...n, x: Math.max(0, a.x), y: Math.max(0, a.y) } } };
     }
+    case 'MOVE_NODES': {
+      const nodes = { ...s.nodes };
+      for (const m of a.moves) {
+        const n = nodes[m.id];
+        if (n) nodes[m.id] = { ...n, x: Math.max(0, m.x), y: Math.max(0, m.y) };
+      }
+      return { ...s, nodes };
+    }
     case 'RENAME_NODE': {
       const n = s.nodes[a.id];
       if (!n) return s;

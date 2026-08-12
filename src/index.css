@@ -152,6 +152,15 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
 
 .edge-label { fill: var(--muted); font-size: 11px; font-family: inherit; cursor: pointer; }
 
+.marquee {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 2px;
+}
+
 .empty-state {
   position: absolute;
   top: 50%; left: 50%;

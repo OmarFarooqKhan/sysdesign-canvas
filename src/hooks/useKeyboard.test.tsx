@@ -8,14 +8,14 @@ import { useKeyboard } from './useKeyboard';
 /** Test-only harness exposing seed/select actions and live counts. */
 function Harness() {
   const { state, dispatch } = useGraph();
-  const { selectNode, selectRegion, selectEdge } = useUI();
+  const { selectNode, selectNodes, selectedNodeIds, selectRegion, selectEdge } = useUI();
   useKeyboard();
+  const addNode = () => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'Server' }, x: 0, y: 0 });
   return (
     <div>
-      <button onClick={() => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'Server' }, x: 0, y: 0 })}>
-        add-node
-      </button>
+      <button onClick={addNode}>add-node</button>
       <button onClick={() => selectNode('n1')}>select-node</button>
+      <button onClick={() => selectNodes(['n1', 'n2'])}>select-two-nodes</button>
       <button onClick={() => dispatch({ type: 'ADD_REGION' })}>add-region</button>
       <button onClick={() => selectRegion('r1')}>select-region</button>
       <button onClick={() => dispatch({ type: 'ADD_EDGE', from: 'a', to: 'b' })}>add-edge</button>
@@ -23,6 +23,7 @@ function Harness() {
       <span data-testid="node-count">{Object.keys(state.nodes).length}</span>
       <span data-testid="region-count">{state.regions.length}</span>
       <span data-testid="edge-count">{state.edges.length}</span>
+      <span data-testid="selected-count">{selectedNodeIds.length}</span>
       <div contentEditable data-testid="editable" suppressContentEditableWarning>
         edit
       </div>
@@ -66,6 +67,20 @@ describe('useKeyboard', () => {
     await user.click(screen.getByText('select-edge'));
     fireEvent.keyDown(document, { key: 'Delete' });
     expect(screen.getByTestId('edge-count')).toHaveTextContent('0');
+  });
+
+  it('Delete removes every node in a multi-selection and their edges, then clears selection', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node')); // n1
+    await user.click(screen.getByText('add-node')); // n2
+    await user.click(screen.getByText('add-edge')); // unrelated edge a->b, should survive
+    await user.click(screen.getByText('select-two-nodes'));
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('2');
+    fireEvent.keyDown(document, { key: 'Delete' });
+    expect(screen.getByTestId('node-count')).toHaveTextContent('0');
+    expect(screen.getByTestId('edge-count')).toHaveTextContent('1');
+    expect(screen.getByTestId('selected-count')).toHaveTextContent('0');
   });
 
   it('Delete with nothing selected does nothing', async () => {
