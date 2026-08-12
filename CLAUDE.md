@@ -115,7 +115,7 @@ sysdesign-canvas/
 │       └── store/*.test.(ts|tsx)
 ├── .github/
 │   ├── dependabot.yml           # keeps npm + workflow actions current
-│   └── workflows/deploy.yml     # push to main → audit → test → build → deploy (GitHub Pages)
+│   └── workflows/deploy.yml     # push to main → audit → test → build → deploy (GitHub Pages, no `any`-check gate)
 ├── scripts/
 │   └── check-no-any.mjs         # bans the `any` type; see the No `any` hard rule above
 ├── index.html
@@ -141,6 +141,8 @@ sysdesign-canvas/
 
 - `npm run test:coverage` — all tests pass at 100% coverage.
 - `npm run build` — passes `tsc` (strict, no-unused) and the Vite build.
-- `npm run check:no-any` — no TypeScript `any` usages.
+- `npm run check:no-any` — no TypeScript `any` usages. Local-only: this does
+  not gate CI/deploy (see below), so run it yourself before committing.
 - Deploys run automatically via GitHub Actions on push to `main` (audit →
-  tests → build → deploy).
+  tests → build → deploy). The no-`any` check is intentionally not part of
+  that pipeline.

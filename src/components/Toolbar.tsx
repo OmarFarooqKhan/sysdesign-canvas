@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
@@ -7,6 +7,7 @@ import { TEMPLATE_OPTIONS, templateToData } from '../data/templates';
 import type { TemplateKey } from '../data/templates';
 import { toData, download, parse } from '../lib/io';
 import { exportPng } from '../lib/exportPng';
+import { AlertDialog } from './AlertDialog';
 
 /** Top header bar: templates, region/edge tools, undo/redo, import/export, clear. */
 export function Toolbar() {
@@ -14,6 +15,7 @@ export function Toolbar() {
   const { edgeMode, toggleEdgeMode, setEdgeMode } = useUI();
   const { panMode, togglePanMode, setViewport, canvasRef } = useViewport();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [alertMsg, setAlertMsg] = useState<string | null>(null);
 
   const handleFit = () => {
     const bounds = contentBounds(state);
@@ -55,7 +57,7 @@ export function Toolbar() {
         dispatch({ type: 'LOAD', data: d });
         setEdgeMode(d.edgeMode);
       } catch (err) {
-        alert('Could not import: ' + (err as Error).message);
+        setAlertMsg('Could not import: ' + (err as Error).message);
       }
     }
     e.target.value = '';
@@ -67,6 +69,7 @@ export function Toolbar() {
 
   return (
     <header>
+      {alertMsg && <AlertDialog message={alertMsg} onClose={() => setAlertMsg(null)} />}
       <h1>🧩 System Design Canvas</h1>
       <span className="hint">Drag from the palette · click to connect</span>
       <div className="spacer" />

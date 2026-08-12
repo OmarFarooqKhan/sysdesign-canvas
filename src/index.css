@@ -361,3 +361,34 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
 .db-list-add { display: flex; gap: 6px; }
 .db-list-add input { flex: 1; }
 .db-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+.alert-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 16, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+}
+.alert-modal {
+  width: 360px;
+  max-width: 90vw;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+.alert-modal p { font-size: 13px; color: var(--text); margin: 0; }
+.alert-modal button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.alert-modal button.primary { background: var(--accent); border-color: var(--accent); color: #06101f; }
+.alert-actions { display: flex; justify-content: flex-end; margin-top: 14px; }

@@ -48,12 +48,10 @@ function renderHarness() {
 
 describe('Toolbar', () => {
   let confirmSpy: ReturnType<typeof vi.spyOn>;
-  let alertSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     exportPngMock.mockClear();
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
     (URL as unknown as { createObjectURL: typeof URL.createObjectURL }).createObjectURL = vi.fn(() => 'blob:mock');
     (URL as unknown as { revokeObjectURL: typeof URL.revokeObjectURL }).revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -210,14 +208,16 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('node-count')).toHaveTextContent('0');
   });
 
-  it('import alerts on malformed JSON', async () => {
+  it('import shows a custom alert dialog on malformed JSON, dismissible via OK', async () => {
     const user = userEvent.setup();
     const { container } = renderHarness();
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['not json'], 'bad.json', { type: 'application/json' });
     await user.upload(input, file);
-    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
-    expect(alertSpy.mock.calls[0][0]).toMatch(/^Could not import:/);
+    await waitFor(() => expect(document.querySelector('.alert-modal')).toBeInTheDocument());
+    expect(screen.getByText(/^Could not import:/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(document.querySelector('.alert-modal')).not.toBeInTheDocument();
   });
 
   it('clear with confirm true empties the canvas', async () => {
