@@ -12,6 +12,7 @@ export type GraphAction =
   | { type: 'LABEL_EDGE'; id: string; label: string }
   | { type: 'DELETE_EDGE'; id: string }
   | { type: 'TOGGLE_EDGE_DIRECTION'; id: string }
+  | { type: 'BEND_EDGE'; id: string; bend: number }
   | { type: 'ADD_REGION'; region?: Partial<Region> }
   | { type: 'MOVE_REGION'; id: string; x: number; y: number }
   | { type: 'RESIZE_REGION'; id: string; w: number; h: number }
@@ -20,7 +21,9 @@ export type GraphAction =
   | { type: 'LOAD'; data: GraphData }
   | { type: 'CLEAR' };
 
-const SESSION_TYPES = new Set<GraphAction['type']>(['MOVE_NODE', 'MOVE_NODES', 'MOVE_REGION', 'RESIZE_REGION']);
+const SESSION_TYPES = new Set<GraphAction['type']>([
+  'MOVE_NODE', 'MOVE_NODES', 'MOVE_REGION', 'RESIZE_REGION', 'BEND_EDGE',
+]);
 
 /** Drag/resize actions coalesce into a single undo entry. */
 export const isSessionAction = (a: GraphAction): boolean => SESSION_TYPES.has(a.type);

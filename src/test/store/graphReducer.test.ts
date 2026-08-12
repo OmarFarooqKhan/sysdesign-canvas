@@ -72,6 +72,15 @@ describe('graphReducer edges', () => {
     expect(off.edges[0].bidirectional).toBe(false);
     expect(graphReducer(s, { type: 'TOGGLE_EDGE_DIRECTION', id: 'nope' }).edges[0].bidirectional).toBeUndefined();
   });
+  it('sets the bend on the matching edge only, leaving others untouched', () => {
+    const s: GraphState = {
+      ...base(),
+      edges: [{ id: 'e1', from: 'a', to: 'b', label: '' }, { id: 'e2', from: 'c', to: 'd', label: '' }],
+    };
+    const out = graphReducer(s, { type: 'BEND_EDGE', id: 'e1', bend: 25 });
+    expect(out.edges.map((e) => e.bend)).toEqual([25, undefined]);
+    expect(graphReducer(s, { type: 'BEND_EDGE', id: 'nope', bend: 5 }).edges[0].bend).toBeUndefined();
+  });
 });
 
 describe('graphReducer regions', () => {

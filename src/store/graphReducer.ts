@@ -44,6 +44,8 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
       return { ...s, edges: s.edges.filter((e) => e.id !== a.id) };
     case 'TOGGLE_EDGE_DIRECTION':
       return { ...s, edges: s.edges.map((e) => (e.id === a.id ? { ...e, bidirectional: !e.bidirectional } : e)) };
+    case 'BEND_EDGE':
+      return { ...s, edges: s.edges.map((e) => (e.id === a.id ? { ...e, bend: a.bend } : e)) };
     case 'ADD_REGION': {
       const seq = s.seq + 1;
       const r = a.region ?? {};

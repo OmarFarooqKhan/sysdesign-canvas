@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import type { Rect } from '../lib/geometry';
-import { nodesInRect, rectFromPoints } from '../lib/geometry';
+import type { Rect } from '../lib/selection';
+import { nodesInRect, rectFromPoints } from '../lib/selection';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';

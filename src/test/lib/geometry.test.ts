@@ -1,83 +1,126 @@
 import { describe, expect, it } from 'vitest';
-import {
-  edgeEndpoints, edgePath, nodeCenter, nodeSnapshot, nodesInRect, offsetSnapshot,
-  portCenter, rectFromPoints, rectsIntersect,
-} from '../../lib/geometry';
+import { edgeEndpoints, edgePath, insetEndpoints, nodeCenter, perpUnit } from '../../lib/geometry';
 import type { GraphNode } from '../../types';
 
 const node = (x: number, y: number): GraphNode => ({ id: 'n', key: 'k', icon: 'i', label: 'l', x, y });
-const idNode = (id: string, x: number, y: number): GraphNode => ({ id, key: 'k', icon: 'i', label: 'l', x, y });
 
-describe('geometry', () => {
-  it('computes port and node anchors', () => {
-    expect(portCenter(node(100, 100))).toEqual({ x: 180, y: 132 });
+describe('geometry: nodeCenter', () => {
+  it('computes the center of a node box', () => {
     expect(nodeCenter(node(100, 100))).toEqual({ x: 148, y: 132 });
   });
+});
 
-  it('builds a curved path by default', () => {
-    expect(edgePath('curved', 0, 0, 100, 50)).toContain('C');
+describe('geometry: edgeEndpoints side pairings', () => {
+  it('anchors right->left when b is directly right of a', () => {
+    const a = node(0, 0);
+    const b = node(400, 0);
+    expect(edgeEndpoints(a, b)).toEqual({ sx: 96, sy: 32, tx: 400, ty: 32 });
   });
 
-  it('builds an orthogonal path', () => {
+  it('anchors left->right when b is directly left of a', () => {
+    const a = node(400, 0);
+    const b = node(0, 0);
+    expect(edgeEndpoints(a, b)).toEqual({ sx: 400, sy: 32, tx: 96, ty: 32 });
+  });
+
+  it('anchors bottom->top when b is directly below a', () => {
+    const a = node(0, 0);
+    const b = node(0, 400);
+    expect(edgeEndpoints(a, b)).toEqual({ sx: 48, sy: 64, tx: 48, ty: 400 });
+  });
+
+  it('anchors top->bottom when b is directly above a', () => {
+    const a = node(0, 400);
+    const b = node(0, 0);
+    expect(edgeEndpoints(a, b)).toEqual({ sx: 48, sy: 400, tx: 48, ty: 64 });
+  });
+
+  it('breaks ties in favor of the horizontal axis on the diagonal', () => {
+    // |dx| == |dy|: horizontal wins.
+    const a = node(0, 0);
+    const b = node(300, 300);
+    expect(edgeEndpoints(a, b)).toEqual({ sx: 96, sy: 32, tx: 300, ty: 332 });
+  });
+});
+
+describe('geometry: insetEndpoints', () => {
+  it('leaves the source untouched and insets only the target for a one-way edge', () => {
+    const out = insetEndpoints(0, 0, 100, 0, false);
+    expect(out).toEqual({ sx: 0, sy: 0, tx: 96, ty: 0 });
+  });
+
+  it('insets both ends for a bidirectional edge', () => {
+    const out = insetEndpoints(0, 0, 100, 0, true);
+    expect(out).toEqual({ sx: 4, sy: 0, tx: 96, ty: 0 });
+  });
+
+  it('insets along a vertical path too', () => {
+    const out = insetEndpoints(0, 0, 0, 100, true);
+    expect(out).toEqual({ sx: 0, sy: 4, tx: 0, ty: 96 });
+  });
+
+  it('accepts a custom gap and guards against a zero-length segment', () => {
+    expect(insetEndpoints(0, 0, 100, 0, true, 10)).toEqual({ sx: 10, sy: 0, tx: 90, ty: 0 });
+    expect(insetEndpoints(5, 5, 5, 5, true)).toEqual({ sx: 5, sy: 5, tx: 5, ty: 5 });
+  });
+});
+
+describe('geometry: perpUnit', () => {
+  it('is perpendicular to a horizontal segment', () => {
+    expect(perpUnit(0, 0, 100, 0)).toEqual({ x: 0, y: 1 });
+  });
+
+  it('is perpendicular to a vertical segment', () => {
+    expect(perpUnit(0, 0, 0, 100)).toEqual({ x: -1, y: 0 });
+  });
+
+  it('guards against a zero-length segment', () => {
+    expect(perpUnit(5, 5, 5, 5)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('geometry: edgePath curved mode', () => {
+  it('builds a horizontal-dominant curve', () => {
+    const d = edgePath('curved', 0, 0, 100, 50);
+    expect(d).toBe('M 0 0 C 70 0, 30 50, 100 50');
+  });
+
+  it('builds a vertical-dominant curve for top/bottom anchors', () => {
+    const d = edgePath('curved', 0, 0, 20, 100);
+    expect(d).toBe('M 0 0 C 0 70, 20 30, 20 100');
+  });
+
+  it('bows a horizontal-dominant curve by its perpendicular bend', () => {
+    const d = edgePath('curved', 0, 0, 100, 0, 20);
+    // perpendicular of a horizontal segment is vertical: bx=0, by=bend
+    expect(d).toBe('M 0 0 C 70 20, 30 20, 100 0');
+  });
+
+  it('bows a vertical-dominant curve by its perpendicular bend', () => {
+    const d = edgePath('curved', 0, 0, 0, 100, 20);
+    // perpendicular of a vertical segment is horizontal: bx=-bend, by=0
+    expect(d).toBe('M 0 0 C -20 70, -20 30, 0 100');
+  });
+});
+
+describe('geometry: edgePath ortho mode', () => {
+  it('builds a horizontal-dominant elbow route', () => {
     const d = edgePath('ortho', 0, 0, 100, 50);
     expect(d).toBe('M 0 0 L 50 0 L 50 50 L 100 50');
   });
 
-  it('picks target side based on direction', () => {
-    const forward = edgeEndpoints(node(0, 0), node(300, 0)); // source left of target
-    expect(forward.tx).toBe(300 + 48 - 48); // left side
-    const backward = edgeEndpoints(node(400, 0), node(0, 0)); // source right of target
-    expect(backward.tx).toBe(0 + 48 + 48); // right side
+  it('builds a vertical-dominant elbow route for top/bottom anchors', () => {
+    const d = edgePath('ortho', 0, 0, 20, 100);
+    expect(d).toBe('M 0 0 L 0 50 L 20 50 L 20 100');
   });
-});
 
-describe('rectFromPoints', () => {
-  it('normalizes two points regardless of drag direction', () => {
-    expect(rectFromPoints(10, 10, 50, 40)).toEqual({ x: 10, y: 10, w: 40, h: 30 });
-    expect(rectFromPoints(50, 40, 10, 10)).toEqual({ x: 10, y: 10, w: 40, h: 30 });
-    expect(rectFromPoints(10, 40, 50, 10)).toEqual({ x: 10, y: 10, w: 40, h: 30 });
+  it('shifts the horizontal-dominant elbow by the bend', () => {
+    const d = edgePath('ortho', 0, 0, 100, 50, 15);
+    expect(d).toBe('M 0 0 L 65 0 L 65 50 L 100 50');
   });
-});
 
-describe('rectsIntersect', () => {
-  it('detects overlap', () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 10, h: 10 }, { x: 5, y: 5, w: 10, h: 10 })).toBe(true);
-  });
-  it('detects non-overlap', () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 10, h: 10 }, { x: 20, y: 20, w: 10, h: 10 })).toBe(false);
-  });
-  it('treats edge-touching as non-overlap', () => {
-    expect(rectsIntersect({ x: 0, y: 0, w: 10, h: 10 }, { x: 10, y: 0, w: 10, h: 10 })).toBe(false);
-  });
-});
-
-describe('nodesInRect', () => {
-  const nodes = [idNode('a', 0, 0), idNode('b', 200, 0), idNode('c', 500, 500)];
-  it('returns ids of nodes whose NODE_W x NODE_H box intersects the rect', () => {
-    expect(nodesInRect(nodes, { x: 0, y: 0, w: 260, h: 100 })).toEqual(['a', 'b']);
-  });
-  it('returns an empty array when nothing intersects', () => {
-    expect(nodesInRect(nodes, { x: 900, y: 900, w: 10, h: 10 })).toEqual([]);
-  });
-  it('a rect fully containing a node still intersects it', () => {
-    expect(nodesInRect([idNode('c', 500, 500)], { x: 0, y: 0, w: 1000, h: 1000 })).toEqual(['c']);
-  });
-});
-
-describe('nodeSnapshot / offsetSnapshot', () => {
-  it('snapshots the given ids from a nodes map, defaulting missing ones to 0,0', () => {
-    const byId = { a: node(10, 20), b: node(30, 40) };
-    expect(nodeSnapshot(byId, ['a', 'b', 'missing'])).toEqual([
-      { id: 'a', x: 10, y: 20 },
-      { id: 'b', x: 30, y: 40 },
-      { id: 'missing', x: 0, y: 0 },
-    ]);
-  });
-  it('offsets every entry by dx/dy, clamping to non-negative', () => {
-    const snap = [{ id: 'a', x: 10, y: 10 }, { id: 'b', x: 5, y: 5 }];
-    expect(offsetSnapshot(snap, 5, -8)).toEqual([
-      { id: 'a', x: 15, y: 2 },
-      { id: 'b', x: 10, y: 0 },
-    ]);
+  it('shifts the vertical-dominant elbow by the bend', () => {
+    const d = edgePath('ortho', 0, 0, 20, 100, 15);
+    expect(d).toBe('M 0 0 L 0 65 L 20 65 L 20 100');
   });
 });

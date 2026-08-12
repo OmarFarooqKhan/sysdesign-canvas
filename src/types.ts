@@ -19,6 +19,8 @@ export interface Edge {
   to: string;
   label: string;
   bidirectional?: boolean;
+  /** Signed perpendicular offset applied at the path's midpoint, from dragging. */
+  bend?: number;
 }
 
 export interface Region {

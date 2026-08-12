@@ -11,6 +11,7 @@ describe('action helpers', () => {
     expect(isSessionAction({ type: 'MOVE_NODES', moves: [{ id: 'n1', x: 0, y: 0 }] })).toBe(true);
     expect(isSessionAction({ type: 'MOVE_REGION', id: 'r1', x: 0, y: 0 })).toBe(true);
     expect(isSessionAction({ type: 'RESIZE_REGION', id: 'r1', w: 1, h: 1 })).toBe(true);
+    expect(isSessionAction({ type: 'BEND_EDGE', id: 'e1', bend: 1 })).toBe(true);
     expect(isSessionAction({ type: 'CLEAR' })).toBe(false);
   });
 

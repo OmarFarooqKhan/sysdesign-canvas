@@ -4,7 +4,7 @@ import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
 import { usePointerDrag } from './usePointerDrag';
-import { nodeSnapshot, offsetSnapshot, type NodeSnapshot } from '../lib/geometry';
+import { nodeSnapshot, offsetSnapshot, type NodeSnapshot } from '../lib/selection';
 
 /** Drags a node, moving its whole multi-selection together when it's part of one. */
 export function useNodeDrag(node: GraphNode) {
