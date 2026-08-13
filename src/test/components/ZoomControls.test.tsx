@@ -1,16 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { ZoomControls } from '../../components/ZoomControls';
 import { ZOOM_MAX, ZOOM_MIN } from '../../lib/viewport';
 
 function Harness() {
+  const { state, dispatch } = useGraph();
   const { setViewport } = useViewport();
   return (
     <>
       <button onClick={() => setViewport({ zoom: ZOOM_MIN })}>set-min</button>
       <button onClick={() => setViewport({ zoom: ZOOM_MAX })}>set-max</button>
+      <button onClick={() => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'Server' }, x: 10, y: 10 })}>
+        seed-node
+      </button>
+      <span data-testid="node-count">{Object.keys(state.nodes).length}</span>
       <ZoomControls />
     </>
   );
@@ -18,9 +24,11 @@ function Harness() {
 
 function setup() {
   return render(
-    <ViewportProvider>
-      <Harness />
-    </ViewportProvider>,
+    <GraphProvider>
+      <ViewportProvider>
+        <Harness />
+      </ViewportProvider>
+    </GraphProvider>,
   );
 }
 
@@ -133,5 +141,28 @@ describe('ZoomControls', () => {
     const input = screen.getByRole('spinbutton', { name: 'Zoom percentage' });
     fireEvent.pointerDown(input);
     expect(screen.getByRole('spinbutton', { name: 'Zoom percentage' })).toBeInTheDocument();
+  });
+
+  it('Undo/Redo toggle enabled state and dispatch', async () => {
+    const user = userEvent.setup();
+    setup();
+    const undoBtn = screen.getByRole('button', { name: 'Undo' });
+    const redoBtn = screen.getByRole('button', { name: 'Redo' });
+    expect(undoBtn).toBeDisabled();
+    expect(redoBtn).toBeDisabled();
+
+    await user.click(screen.getByText('seed-node'));
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+    expect(undoBtn).toBeEnabled();
+
+    await user.click(undoBtn);
+    expect(screen.getByTestId('node-count')).toHaveTextContent('0');
+    expect(undoBtn).toBeDisabled();
+    expect(redoBtn).toBeEnabled();
+
+    await user.click(redoBtn);
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+    expect(redoBtn).toBeDisabled();
+    expect(undoBtn).toBeEnabled();
   });
 });

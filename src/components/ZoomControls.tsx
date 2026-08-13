@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useGraph } from '../store/GraphContext';
 import { useViewport } from '../store/ViewportContext';
 import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from '../lib/viewport';
 
-/** Floating zoom cluster, bottom-right of the canvas: translucent at rest, opaque on hover. */
+/** Floating cluster, bottom-right of the canvas: undo/redo + zoom, translucent at rest, opaque on hover. */
 export function ZoomControls() {
+  const { dispatch, canUndo, canRedo } = useGraph();
   const { zoom, zoomIn, zoomOut, setViewport } = useViewport();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -43,6 +45,9 @@ export function ZoomControls() {
 
   return (
     <div className="zoom-controls">
+      <button disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })} aria-label="Undo">↶</button>
+      <button disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })} aria-label="Redo">↷</button>
+      <div className="zoom-divider" />
       <button onClick={zoomOut} disabled={zoom <= ZOOM_MIN} aria-label="Zoom out">−</button>
       {editing ? (
         <input

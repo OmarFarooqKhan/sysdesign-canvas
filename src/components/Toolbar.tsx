@@ -9,9 +9,9 @@ import { toData, download, parse } from '../lib/io';
 import { exportPng } from '../lib/exportPng';
 import { AlertDialog } from './AlertDialog';
 
-/** Top header bar: templates, region/edge tools, undo/redo, import/export, clear. */
+/** Top header bar: templates, region/edge tools, import/export, clear. */
 export function Toolbar() {
-  const { state, dispatch, canUndo, canRedo } = useGraph();
+  const { state, dispatch } = useGraph();
   const { edgeMode, toggleEdgeMode, setEdgeMode } = useUI();
   const { panMode, togglePanMode, setViewport, canvasRef } = useViewport();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,8 +83,6 @@ export function Toolbar() {
       <button aria-pressed={edgeMode === 'ortho'} className={edgeMode === 'ortho' ? 'active' : undefined} onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
       <button onClick={handleFit}>⤢ Fit</button>
       <button aria-pressed={panMode} className={panMode ? 'active' : undefined} onClick={togglePanMode}>✋ Pan</button>
-      <button className="group-start" disabled={!canUndo} onClick={() => dispatch({ type: 'UNDO' })}>Undo</button>
-      <button disabled={!canRedo} onClick={() => dispatch({ type: 'REDO' })}>Redo</button>
       <select className="group-start" defaultValue="" onChange={handleExportChange} aria-label="Export">
         <option value="">Export…</option>
         <option value="json">as JSON</option>

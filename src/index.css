@@ -164,6 +164,7 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
   transition: opacity .15s;
 }
 .zoom-controls:hover, .zoom-controls:focus-within { opacity: 1; }
+.zoom-controls .zoom-divider { width: 1px; align-self: stretch; background: var(--border); }
 .zoom-controls button {
   width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;

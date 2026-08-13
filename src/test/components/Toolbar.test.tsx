@@ -20,6 +20,7 @@ function Harness({ withCanvasRef = true }: { withCanvasRef?: boolean }) {
         seed-node
       </button>
       <span data-testid="node-count">{Object.keys(state.nodes).length}</span>
+      <span data-testid="region-count">{state.regions.length}</span>
       <span data-testid="edge-mode">{useUI().edgeMode}</span>
       <span data-testid="viewport">{`${zoom},${panX},${panY}`}</span>
       {withCanvasRef && <CanvasRefProbe />}
@@ -67,36 +68,12 @@ describe('Toolbar', () => {
     expect(screen.getByText(/drag from the palette/i)).toBeInTheDocument();
   });
 
-  it('Undo/Redo toggle enabled state and dispatch', async () => {
-    const user = userEvent.setup();
-    renderHarness();
-    const undoBtn = screen.getByRole('button', { name: 'Undo' });
-    const redoBtn = screen.getByRole('button', { name: 'Redo' });
-    expect(undoBtn).toBeDisabled();
-    expect(redoBtn).toBeDisabled();
-
-    await user.click(screen.getByText('seed-node'));
-    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
-    expect(undoBtn).toBeEnabled();
-
-    await user.click(undoBtn);
-    expect(screen.getByTestId('node-count')).toHaveTextContent('0');
-    expect(undoBtn).toBeDisabled();
-    expect(redoBtn).toBeEnabled();
-
-    await user.click(redoBtn);
-    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
-    expect(redoBtn).toBeDisabled();
-    expect(undoBtn).toBeEnabled();
-  });
-
   it('+ Region dispatches ADD_REGION', async () => {
     const user = userEvent.setup();
     renderHarness();
-    const undoBtn = screen.getByRole('button', { name: 'Undo' });
-    expect(undoBtn).toBeDisabled();
+    expect(screen.getByTestId('region-count')).toHaveTextContent('0');
     await user.click(screen.getByRole('button', { name: '+ Region' }));
-    expect(undoBtn).toBeEnabled();
+    expect(screen.getByTestId('region-count')).toHaveTextContent('1');
   });
 
   it('edge toggle flips label, aria-pressed and the active class', async () => {
