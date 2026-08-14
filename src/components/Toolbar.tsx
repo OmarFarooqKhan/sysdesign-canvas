@@ -3,7 +3,6 @@ import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
 import { contentBounds, fitTransform } from '../lib/viewport';
-import { TEMPLATE_OPTIONS, templateToData, type TemplateKey } from '../data/templates';
 import { toData, download, parse } from '../lib/io';
 import { exportPng } from '../lib/exportPng';
 import { downloadSvg } from '../lib/exportSvg';
@@ -13,6 +12,8 @@ import { useConfirmAction } from '../hooks/useConfirmAction';
 import { LibraryButton } from './LibraryButton';
 import { ShareButton } from './ShareButton';
 import { PresentButton } from './PresentButton';
+import { PlaythroughButton } from './PlaythroughButton';
+import { TemplateSelect } from './TemplateSelect';
 
 /** Top header bar: templates, region/edge tools, import/export, clear. Editing controls disable
  *  while presenting; Fit/Pan/Present/Export/Share stay live since they don't mutate the diagram. */
@@ -29,18 +30,6 @@ export function Toolbar() {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!bounds || !rect) return;
     setViewport(fitTransform(bounds, rect.width, rect.height));
-  };
-
-  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const key = e.target.value as TemplateKey | '';
-    e.target.value = '';
-    if (!key) return;
-    const load = () => {
-      dispatch({ type: 'LOAD', data: templateToData(key) });
-      setEdgeMode('curved');
-    };
-    if (Object.keys(state.nodes).length === 0) return load();
-    request('Replace the current canvas with this template?', load);
   };
 
   const handleExportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -74,15 +63,13 @@ export function Toolbar() {
       <h1>🧩 System Design Canvas</h1>
       <span className="hint">Drag from the palette · click to connect</span>
       <div className="spacer" />
-      <select defaultValue="" onChange={handleTemplateChange} aria-label="Templates" disabled={presenting}>
-        <option value="">Templates…</option>
-        {TEMPLATE_OPTIONS.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-      </select>
+      <TemplateSelect disabled={presenting} request={request} />
       <button disabled={presenting} onClick={() => dispatch({ type: 'ADD_REGION', region: { x: 60 + Math.random() * 40, y: 60 + Math.random() * 40 } })}>+ Region</button>
       <button aria-pressed={edgeMode === 'ortho'} className={edgeMode === 'ortho' ? 'active' : undefined} disabled={presenting} onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
       <button onClick={handleFit}>⤢ Fit</button>
       <button aria-pressed={panMode} className={panMode ? 'active' : undefined} onClick={togglePanMode}>✋ Pan</button>
       <PresentButton />
+      <PlaythroughButton />
       <LibraryButton disabled={presenting} />
       <ShareButton />
       <select className="group-start" defaultValue="" onChange={handleExportChange} aria-label="Export">

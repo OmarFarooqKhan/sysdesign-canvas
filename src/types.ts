@@ -51,12 +51,22 @@ export interface Region {
   color: string;
 }
 
+/** One guided-playthrough step: the node it visits ("the section") plus free text.
+ *  The hop into a step is resolved at render time from the existing edges — steps
+ *  never store edge ids or geometry. */
+export interface WalkStep {
+  nodeId: string;
+  text: string;
+}
+
 /** The undoable graph. `seq` is a monotonic id counter. */
 export interface GraphState {
   nodes: Record<string, GraphNode>;
   edges: Edge[];
   regions: Region[];
   seq: number;
+  /** Ordered guided-playthrough steps; optional so existing saves keep parsing. */
+  walkthrough?: WalkStep[];
 }
 
 /** Serialized diagram (export / import / templates). */
@@ -65,4 +75,5 @@ export interface GraphData {
   nodes: GraphNode[];
   edges: Edge[];
   regions: Region[];
+  walkthrough?: WalkStep[];
 }

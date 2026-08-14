@@ -70,4 +70,40 @@ describe('io', () => {
     const imported = parse(JSON.stringify(exported));
     expect(imported.nodes[0].notes).toBe('~10k QPS, 500GB storage');
   });
+
+  it('round-trips a walkthrough through export (toData) and import (parse)', () => {
+    const walkthrough = [{ nodeId: 'n1', text: 'the request lands here' }];
+    const exported = toData({ ...state, walkthrough }, 'curved');
+    expect(exported.walkthrough).toEqual(walkthrough);
+    expect(parse(JSON.stringify(exported)).walkthrough).toEqual(walkthrough);
+  });
+
+  it('omits walkthrough from toData and parse when the graph has none', () => {
+    const exported = toData(state, 'curved');
+    expect('walkthrough' in exported).toBe(false);
+    const imported = parse(JSON.stringify(exported));
+    expect('walkthrough' in imported).toBe(false);
+  });
+
+  it('parse silently drops a malformed walkthrough but keeps the rest of the diagram', () => {
+    const body = { nodes: [], edges: [], regions: [] };
+    const bad: unknown[] = [
+      'nope',
+      { nodeId: 'n1', text: 'x' },
+      [5],
+      [null],
+      [{ text: 'missing node id' }],
+      [{ nodeId: 'n1' }],
+      [{ nodeId: 7, text: 'x' }],
+      [{ nodeId: 'n1', text: 7 }],
+      [{ nodeId: 'n1', text: 'ok' }, { nodeId: 'n2' }],
+    ];
+    for (const walkthrough of bad) {
+      const imported = parse(JSON.stringify({ ...body, walkthrough }));
+      expect('walkthrough' in imported).toBe(false);
+      expect(imported.nodes).toEqual([]);
+    }
+    // A well-formed (even empty) walkthrough is kept.
+    expect(parse(JSON.stringify({ ...body, walkthrough: [] })).walkthrough).toEqual([]);
+  });
 });

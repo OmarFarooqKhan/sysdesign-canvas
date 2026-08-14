@@ -39,4 +39,14 @@ describe('action helpers', () => {
   it('fromData on an empty diagram yields an empty (zero-seq) state', () => {
     expect(fromData({ nodes: [], edges: [], regions: [] })).toEqual(emptyGraph());
   });
+
+  it('fromData carries a walkthrough into state, and omits the key when absent', () => {
+    const walkthrough = [{ nodeId: 'n1', text: 'start' }];
+    const out = fromData({
+      nodes: [{ id: 'n1', key: 'a', icon: 'a', label: 'A', x: 0, y: 0 }],
+      edges: [], regions: [], walkthrough,
+    });
+    expect(out.walkthrough).toEqual(walkthrough);
+    expect('walkthrough' in fromData({ nodes: [], edges: [], regions: [] })).toBe(false);
+  });
 });

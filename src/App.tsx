@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { GraphProvider, useGraph } from './store/GraphContext';
 import { UIProvider, useUI } from './store/UIContext';
 import { ViewportProvider, useViewport } from './store/ViewportContext';
+import { PlaythroughProvider, usePlaythrough } from './store/PlaythroughContext';
 import { Toolbar } from './components/Toolbar';
 import { Palette } from './components/Palette';
 import { Canvas } from './components/Canvas';
+import { PlaythroughPanel } from './components/PlaythroughPanel';
 import { useAutoHideScrollbars } from './hooks/useAutoHideScrollbars';
 import { useAutosave } from './hooks/useAutosave';
 import { fromData } from './store/actions';
@@ -33,17 +35,23 @@ function Autosave() {
 }
 
 /** The app shell: carries the `presenting` class (drives the CSS that makes node/region/edge
- *  pointer editing inert while presenting) and hides the palette while presenting. */
+ *  pointer editing inert while presenting) and hides the palette while presenting. A running
+ *  playthrough applies the same inertness (plus its own `playing` class for dim/pan CSS)
+ *  without touching the user's separate `presenting` toggle. */
 function Shell() {
   const { presenting } = useViewport();
+  const { playing } = usePlaythrough();
+  const inert = presenting || playing;
+  const cls = ['app', inert && 'presenting', playing && 'playing'].filter(Boolean).join(' ');
   return (
-    <div className={presenting ? 'app presenting' : 'app'}>
+    <div className={cls}>
       <Autosave />
       <Toolbar />
       <div className="layout">
-        <Palette presenting={presenting} />
+        <Palette presenting={inert} />
         <div className="canvas-wrap">
           <Canvas />
+          <PlaythroughPanel />
         </div>
       </div>
     </div>
@@ -62,7 +70,9 @@ export function App() {
     <GraphProvider initial={startup.state}>
       <UIProvider initialEdgeMode={startup.edgeMode}>
         <ViewportProvider>
-          <Shell />
+          <PlaythroughProvider>
+            <Shell />
+          </PlaythroughProvider>
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>

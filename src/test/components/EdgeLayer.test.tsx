@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, fireEvent, act } from '@testing-library/react';
+import { render, fireEvent, act, screen } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider } from '../../store/UIContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
+import { PlaythroughProvider, usePlaythrough } from '../../store/PlaythroughContext';
 import { EdgeLayer } from '../../components/EdgeLayer';
 import type { GraphState } from '../../types';
 
@@ -33,15 +34,29 @@ function CanvasStub({ children }: { children: React.ReactNode }) {
   return <div className="canvas" ref={canvasRef}>{children}</div>;
 }
 
+/** Test-only playthrough controls (the toolbar button lives elsewhere). */
+function WalkControls() {
+  const { start, next } = usePlaythrough();
+  return (
+    <>
+      <button onClick={start}>walk-start</button>
+      <button onClick={next}>walk-next</button>
+    </>
+  );
+}
+
 function renderLayer(initial: GraphState) {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
         <ViewportProvider>
-          <Probe />
-          <CanvasStub>
-            <EdgeLayer />
-          </CanvasStub>
+          <PlaythroughProvider>
+            <Probe />
+            <WalkControls />
+            <CanvasStub>
+              <EdgeLayer />
+            </CanvasStub>
+          </PlaythroughProvider>
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
@@ -165,5 +180,50 @@ describe('EdgeLayer', () => {
     expect(document.querySelector('.ctx')).toBeTruthy();
     fireEvent.click(document.body);
     expect(document.querySelector('.ctx')).toBeFalsy();
+  });
+});
+
+describe('EdgeLayer playthrough hop highlight (P4)', () => {
+  const walkSeed = (): GraphState => ({
+    ...seed(),
+    edges: [
+      { id: 'e1', from: 'n1', to: 'n2', label: 'calls' },
+      { id: 'e2', from: 'n2', to: 'n3', label: 'reads' },
+    ],
+    nodes: {
+      ...seed().nodes,
+      n3: { id: 'n3', key: 'cache', icon: 'cache', label: 'Cache', x: 500, y: 100 },
+    },
+    walkthrough: [{ nodeId: 'n1', text: 'a' }, { nodeId: 'n2', text: 'b' }, { nodeId: 'n3', text: 'c' }],
+  });
+
+  it('flags no edge while not playing, or at step 0 (no hop yet)', () => {
+    const { container } = renderLayer(walkSeed());
+    expect(container.querySelector('g.walk-active')).toBeNull();
+    fireEvent.click(screen.getByText('walk-start'));
+    expect(container.querySelector('g.walk-active')).toBeNull();
+  });
+
+  it('flags exactly the current hop edge as steps advance', () => {
+    const { container } = renderLayer(walkSeed());
+    fireEvent.click(screen.getByText('walk-start'));
+    fireEvent.click(screen.getByText('walk-next'));
+    let active = container.querySelectorAll('g.walk-active');
+    expect(active).toHaveLength(1);
+    expect(active[0].querySelector('path.edge')!.getAttribute('stroke')).toBe('#4f8cff');
+    expect(active[0].querySelector('text.edge-label')!.textContent).toBe('calls');
+    fireEvent.click(screen.getByText('walk-next'));
+    active = container.querySelectorAll('g.walk-active');
+    expect(active).toHaveLength(1);
+    expect(active[0].querySelector('text.edge-label')!.textContent).toBe('reads');
+  });
+
+  it('flags nothing when the hop has no connecting edge (straight-line fallback)', () => {
+    const initial = walkSeed();
+    initial.edges = [initial.edges[1]]; // n1 -> n2 now has no edge
+    const { container } = renderLayer(initial);
+    fireEvent.click(screen.getByText('walk-start'));
+    fireEvent.click(screen.getByText('walk-next'));
+    expect(container.querySelector('g.walk-active')).toBeNull();
   });
 });

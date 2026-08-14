@@ -1,28 +1,30 @@
-import { useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { GraphNode } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
+import { usePlaythrough } from '../store/PlaythroughContext';
 import { useNodeDrag } from '../hooks/useNodeDrag';
 import { useLinkDrag } from '../hooks/useLinkDrag';
-import { textOf } from '../lib/dom';
+import { activeStepNodeId, hasWalkStep } from '../lib/playthrough';
 import { Icon } from './Icon';
 import { LinkPreview } from './LinkPreview';
 import { Guides } from './Guides';
-import { ContextMenu } from './ContextMenu';
+import { NodeLabel } from './NodeLabel';
+import { NodeMenu } from './NodeMenu';
 import { NotesEditor } from './NotesEditor';
+import { WalkStepEditor } from './WalkStepEditor';
 import { DbInspector } from './db/DbInspector';
 import { dbTableCount, isDbNode } from './db/dbModel';
 
 export function NodeView({ node }: { node: GraphNode }) {
-  const { dispatch } = useGraph();
+  const { state } = useGraph();
   const { selectedNodeIds, selectNode } = useUI();
-  const labelRef = useRef<HTMLDivElement>(null);
-  const [editing, setEditing] = useState(false);
+  const { playing, stepIndex } = usePlaythrough();
   const [dbOpen, setDbOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [walkOpen, setWalkOpen] = useState(false);
 
   const { onMouseDown: dragNode, guides } = useNodeDrag(node);
   const { linking, tempLine, onPortMouseDown, onRootMouseUp } = useLinkDrag(node);
@@ -38,14 +40,6 @@ export function NodeView({ node }: { node: GraphNode }) {
     if (!(e.target as HTMLElement).closest('.port') && isDbNode(node.key)) setDbOpen(true);
   };
 
-  const onLabelBlur = () => {
-    setEditing(false); dispatch({ type: 'RENAME_NODE', id: node.id, label: textOf(labelRef.current) });
-  };
-
-  const onLabelKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter') { e.preventDefault(); labelRef.current?.blur(); }
-  };
-
   const onNodeContextMenu = (e: ReactMouseEvent) => {
     e.preventDefault();
     setMenuPos({ x: e.clientX, y: e.clientY });
@@ -55,6 +49,7 @@ export function NodeView({ node }: { node: GraphNode }) {
   const cls = [
     'node', selectedNodeIds.includes(node.id) && 'selected', linking && 'linking',
     dbCount > 0 && 'has-data', node.notes && 'has-notes',
+    playing && activeStepNodeId(state, stepIndex) === node.id && 'walk-active',
   ].filter(Boolean).join(' ');
 
   return (
@@ -71,29 +66,23 @@ export function NodeView({ node }: { node: GraphNode }) {
           <div className="port" onMouseDown={onPortMouseDown} />
           {dbCount > 0 && <span className="db-badge">{dbCount}</span>}
           {node.notes && <span className="notes-badge" title={node.notes}>📝</span>}
+          {hasWalkStep(state, node.id) && <span className="walk-badge">▶</span>}
         </div>
-        <div
-          ref={labelRef}
-          className="label"
-          contentEditable={editing}
-          suppressContentEditableWarning
-          onDoubleClick={() => setEditing(true)}
-          onBlur={onLabelBlur}
-          onKeyDown={onLabelKeyDown}
-        >{node.label}</div>
+        <NodeLabel node={node} />
         {tempLine && <LinkPreview {...tempLine} />}
         {dbOpen && <DbInspector node={node} onClose={() => setDbOpen(false)} />}
         {notesOpen && <NotesEditor node={node} onClose={() => setNotesOpen(false)} />}
+        {walkOpen && <WalkStepEditor node={node} onClose={() => setWalkOpen(false)} />}
       </div>
       {guides && <Guides guides={guides} />}
-      {menuPos && createPortal(
-        <ContextMenu
-          x={menuPos.x}
-          y={menuPos.y}
+      {menuPos && (
+        <NodeMenu
+          node={node}
+          pos={menuPos}
           onClose={() => setMenuPos(null)}
-          items={[{ label: '✎ Notes…', onClick: () => setNotesOpen(true) }]}
-        />,
-        document.body,
+          onNotes={() => setNotesOpen(true)}
+          onWalk={() => setWalkOpen(true)}
+        />
       )}
     </>
   );

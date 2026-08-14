@@ -55,6 +55,17 @@ describe('EdgeView', () => {
     expect(path.getAttribute('stroke')).toBe('#4f8cff');
   });
 
+  it('has no walk-active class or highlight by default', () => {
+    const { container } = renderEdge();
+    expect(container.querySelector('g.walk-active')).toBeNull();
+  });
+
+  it('adds the walk-active class and accent stroke while its hop is playing', () => {
+    const { container } = renderEdge({ walkActive: true });
+    expect(container.querySelector('svg > g')).toHaveClass('walk-active');
+    expect(container.querySelector('path.edge')!.getAttribute('stroke')).toBe('#4f8cff');
+  });
+
   it('omits the start marker for a one-way edge', () => {
     const { container } = renderEdge();
     const path = container.querySelector('path.edge')!;

@@ -1,6 +1,7 @@
 import type { GraphState, Region } from '../types';
 import { type GraphAction, REGION_COLORS, emptyGraph, fromData } from './actions';
 import { nodeReducer } from './nodeReducer';
+import { walkReducer } from './walkReducer';
 
 export function graphReducer(s: GraphState, a: GraphAction): GraphState {
   switch (a.type) {
@@ -12,6 +13,10 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
     case 'SET_NODE_NOTES':
     case 'DELETE_NODE':
       return nodeReducer(s, a);
+    case 'SET_WALK_STEP':
+    case 'REMOVE_WALK_STEP':
+    case 'MOVE_WALK_STEP':
+      return walkReducer(s, a);
     case 'ADD_EDGE': {
       if (a.from === a.to || s.edges.some((e) => e.from === a.from && e.to === a.to)) return s;
       const seq = s.seq + 1;

@@ -5,6 +5,7 @@ import { GraphProvider } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
 import { useGraph } from '../../store/GraphContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
+import { PlaythroughProvider } from '../../store/PlaythroughContext';
 import { Toolbar } from '../../components/Toolbar';
 
 const { exportPngMock } = vi.hoisted(() => ({ exportPngMock: vi.fn() }));
@@ -42,7 +43,9 @@ function renderHarness() {
     <GraphProvider>
       <UIProvider>
         <ViewportProvider>
-          <Harness />
+          <PlaythroughProvider>
+            <Harness />
+          </PlaythroughProvider>
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
@@ -280,7 +283,9 @@ describe('Toolbar', () => {
       <GraphProvider>
         <UIProvider>
           <ViewportProvider>
-            <Harness withCanvasRef={false} />
+            <PlaythroughProvider>
+              <Harness withCanvasRef={false} />
+            </PlaythroughProvider>
           </ViewportProvider>
         </UIProvider>
       </GraphProvider>,

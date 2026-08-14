@@ -8,7 +8,7 @@ import { bendDelta, bowEndpoints, edgeMidpoint } from '../lib/edgeBend';
 
 const DRAG_THRESHOLD = 4;
 
-export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSelect }: {
+export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSelect, walkActive = false }: {
   edge: Edge;
   from: GraphNode;
   to: GraphNode;
@@ -16,6 +16,8 @@ export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSe
   selected: boolean;
   defaultBend: number;
   onSelect: (edge: Edge, x: number, y: number) => void;
+  /** True while a playthrough's current hop rides this edge: highlight it. */
+  walkActive?: boolean;
 }) {
   const { dispatch } = useGraph();
   const bend = edge.bend ?? defaultBend;
@@ -51,7 +53,7 @@ export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSe
   };
 
   return (
-    <g>
+    <g className={walkActive ? 'walk-active' : undefined}>
       <path
         className="edge-hit"
         stroke="transparent"
@@ -65,7 +67,7 @@ export function EdgeView({ edge, from, to, edgeMode, selected, defaultBend, onSe
         className="edge"
         markerEnd="url(#arrow)"
         markerStart={edge.bidirectional ? 'url(#arrow)' : undefined}
-        stroke={selected ? '#4f8cff' : '#5b6b8c'}
+        stroke={selected || walkActive ? '#4f8cff' : '#5b6b8c'}
         strokeWidth={2}
         fill="none"
         d={d}

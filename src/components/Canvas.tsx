@@ -9,6 +9,7 @@ import { usePointerDrag } from '../hooks/usePointerDrag';
 import { screenToCanvas } from '../lib/viewport';
 import { EdgeLayer } from './EdgeLayer';
 import { NodeView } from './NodeView';
+import { PlaythroughDot } from './PlaythroughDot';
 import { RegionView } from './RegionView';
 import { EmptyState } from './EmptyState';
 import { ZoomControls } from './ZoomControls';
@@ -71,6 +72,7 @@ export function Canvas() {
         <EdgeLayer />
         {state.regions.map((r) => <RegionView key={r.id} region={r} />)}
         {Object.values(state.nodes).map((n) => <NodeView key={n.id} node={n} />)}
+        <PlaythroughDot />
         <Marquee rect={marqueeRect} />
       </div>
       <EmptyState />

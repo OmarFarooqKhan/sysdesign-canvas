@@ -22,7 +22,10 @@ export type GraphAction =
   | { type: 'DELETE_REGION'; id: string }
   | { type: 'LOAD'; data: GraphData }
   | { type: 'CLEAR' }
-  | { type: 'ADD_ITEMS'; nodes: GraphNode[]; edges: Edge[] };
+  | { type: 'ADD_ITEMS'; nodes: GraphNode[]; edges: Edge[] }
+  | { type: 'SET_WALK_STEP'; nodeId: string; text: string }
+  | { type: 'REMOVE_WALK_STEP'; nodeId: string }
+  | { type: 'MOVE_WALK_STEP'; from: number; to: number };
 
 const SESSION_TYPES = new Set<GraphAction['type']>([
   'MOVE_NODE', 'MOVE_NODES', 'MOVE_REGION', 'RESIZE_REGION', 'BEND_EDGE',
@@ -41,5 +44,7 @@ export function fromData(data: GraphData): GraphState {
   const nodes: Record<string, GraphNode> = {};
   data.nodes.forEach((n) => { nodes[n.id] = n; });
   const ids = [...data.nodes, ...data.edges, ...data.regions].map((x) => x.id);
-  return { nodes, edges: data.edges, regions: data.regions, seq: maxIdNum(ids) };
+  const state: GraphState = { nodes, edges: data.edges, regions: data.regions, seq: maxIdNum(ids) };
+  if (data.walkthrough) state.walkthrough = data.walkthrough;
+  return state;
 }

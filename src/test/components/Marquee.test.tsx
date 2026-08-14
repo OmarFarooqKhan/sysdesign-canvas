@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { GraphProvider } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
 import { ViewportProvider } from '../../store/ViewportContext';
+import { PlaythroughProvider } from '../../store/PlaythroughContext';
 import { Canvas } from '../../components/Canvas';
 import type { GraphState } from '../../types';
 
@@ -29,8 +30,10 @@ function renderCanvas(initial: GraphState) {
     <GraphProvider initial={initial}>
       <UIProvider>
         <ViewportProvider>
-          <Probe />
-          <Canvas />
+          <PlaythroughProvider>
+            <Probe />
+            <Canvas />
+          </PlaythroughProvider>
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>,

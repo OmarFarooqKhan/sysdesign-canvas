@@ -4,15 +4,22 @@ import type { Edge } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
 import { useViewport } from '../store/ViewportContext';
+import { usePlaythrough } from '../store/PlaythroughContext';
 import { EdgeView } from './EdgeView';
 import { ContextMenu } from './ContextMenu';
 import { autoBend } from '../lib/reciprocalBend';
+import { clampStep, hopForStep, resolveSteps } from '../lib/playthrough';
 
 export function EdgeLayer() {
   const { state, dispatch } = useGraph();
   const { edgeMode, selectedEdgeId, selectEdge } = useUI();
   const { canvasRef } = useViewport();
+  const { playing, stepIndex } = usePlaythrough();
   const [menu, setMenu] = useState<{ edge: Edge; x: number; y: number } | null>(null);
+
+  // The edge the playthrough's current hop rides, highlighted below via walkActive.
+  const resolved = playing ? resolveSteps(state) : [];
+  const hop = playing ? hopForStep(state, edgeMode, resolved, clampStep(stepIndex, resolved.length)) : null;
 
   // Position relative to the (unscaled) canvas root, not the zoomed .canvas-inner layer the
   // edge itself lives in, so the menu is portaled there too and never inherits the zoom scale.
@@ -70,6 +77,7 @@ export function EdgeLayer() {
                 selected={selectedEdgeId === e.id}
                 defaultBend={autoBend(state.edges, e, state.nodes[e.from], state.nodes[e.to])}
                 onSelect={onSelectEdge}
+                walkActive={hop?.edgeId === e.id}
               />
             ),
         )}

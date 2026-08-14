@@ -89,13 +89,21 @@ sysdesign-canvas/
 │   │   ├── LibraryRow.tsx       # one row of LibraryDialog's save list
 │   │   ├── LinkPreview.tsx      # in-progress link-drag preview arrow
 │   │   ├── Marquee.tsx          # drag-to-select rectangle (+ useMarquee hook)
+│   │   ├── NodeLabel.tsx        # node caption, dblclick-to-rename (split from NodeView for the line cap)
+│   │   ├── NodeMenu.tsx         # node right-click menu: notes + playthrough-step authoring
 │   │   ├── NodeView.tsx
 │   │   ├── NotesEditor.tsx      # per-node free-text notes modal
 │   │   ├── Palette.tsx          # draggable component palette sidebar; hidden while presenting
+│   │   ├── PlaythroughButton.tsx # toolbar toggle for guided playthrough mode
+│   │   ├── PlaythroughDot.tsx   # neon "request" dot layer with SMIL motion along the hop edge
+│   │   ├── PlaythroughPanel.tsx # translucent right-hand step panel (Back/Next/Done + hints)
 │   │   ├── PresentButton.tsx    # toolbar toggle for presentation mode
+│   │   ├── ProgressDots.tsx     # clickable per-step progress dots (split from PlaythroughPanel)
 │   │   ├── RegionView.tsx
 │   │   ├── ShareButton.tsx      # toolbar entry point for shareable links
+│   │   ├── TemplateSelect.tsx   # Templates… dropdown (split from Toolbar for the line cap)
 │   │   ├── Toolbar.tsx
+│   │   ├── WalkStepEditor.tsx   # playthrough-step textarea modal, mirrors NotesEditor
 │   │   ├── ZoomControls.tsx     # floating zoom cluster (bottom-right of the canvas)
 │   │   └── db/                  # SQL DB node schema editor (opened via node double-click)
 │   │       ├── ColumnRow.tsx
@@ -118,7 +126,8 @@ sysdesign-canvas/
 │   │   ├── useKeyboard.ts                # undo/redo/delete/nudge shortcuts
 │   │   ├── useLinkDrag.ts                 # port-to-port edge-creation drag, per NodeView
 │   │   ├── useNodeDrag.ts                  # node drag incl. group move + snap-to-grid/guides
-│   │   └── usePointerDrag.ts                # shared pointer drag/resize/session logic
+│   │   ├── usePlaythroughCamera.ts          # playthrough camera: capture, pan-to-step, restore
+│   │   └── usePointerDrag.ts                 # shared pointer drag/resize/session logic
 │   ├── lib/
 │   │   ├── clipboard.ts                # copy/paste snapshot + paste-offset helpers
 │   │   ├── dom.ts                       # small DOM helpers (textOf, downloadBlob)
@@ -130,7 +139,8 @@ sysdesign-canvas/
 │   │   ├── io.ts                              # JSON export/import (download/parse/toData)
 │   │   ├── library.ts                          # named diagram CRUD over localStorage
 │   │   ├── persist.ts                           # autosave load/save over localStorage
-│   │   ├── reciprocalBend.ts                     # default bend for reciprocal edge pairs
+│   │   ├── playthrough.ts                        # pure playthrough logic: resolver/clamp/hop/park/pan + DOT_COLOR
+│   │   ├── reciprocalBend.ts                      # default bend for reciprocal edge pairs
 │   │   ├── selection.ts                           # rect math + node snapshot helpers
 │   │   ├── shareUrl.ts                             # encode/decode a diagram into a URL hash
 │   │   ├── snap.ts                                  # grid + alignment-guide snapping
@@ -138,12 +148,14 @@ sysdesign-canvas/
 │   │   └── viewport.ts                                # zoom clamp/step, coords, fit-to-view, contentBounds
 │   ├── store/
 │   │   ├── GraphContext.tsx            # undoable graph state provider
-│   │   ├── UIContext.tsx                # non-undoable UI state (selection, edge mode, clipboard)
-│   │   ├── ViewportContext.tsx           # non-undoable, non-serialized zoom/pan/pan-mode/presenting
-│   │   ├── actions.ts                     # graph action creators + helpers
-│   │   ├── graphReducer.ts                 # pure reducer for graph actions, delegates node cases
-│   │   ├── history.ts                       # generic useReducer undo/redo wrapper
-│   │   └── nodeReducer.ts                    # node-shaped graph action cases (split out of graphReducer)
+│   │   ├── PlaythroughContext.tsx       # ephemeral playthrough player (playing/stepIndex) + keyboard
+│   │   ├── UIContext.tsx                 # non-undoable UI state (selection, edge mode, clipboard)
+│   │   ├── ViewportContext.tsx            # non-undoable, non-serialized zoom/pan/pan-mode/presenting
+│   │   ├── actions.ts                      # graph action creators + helpers
+│   │   ├── graphReducer.ts                  # pure reducer for graph actions, delegates node/walk cases
+│   │   ├── history.ts                        # generic useReducer undo/redo wrapper
+│   │   ├── nodeReducer.ts                     # node-shaped graph action cases (split out of graphReducer)
+│   │   └── walkReducer.ts                      # walkthrough-step action cases (split out of graphReducer)
 │   └── test/                                # ALL tests live here, mirroring src/ subfolders
 │       ├── setup.ts                          # RTL/jest-dom setup (wired via vitest.config.ts)
 │       ├── components/*.test.tsx (+ db/*.test.tsx)

@@ -523,3 +523,94 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
   font-size: 12.5px;
   font-family: inherit;
 }
+
+/* playthrough */
+/* Authoring badge: marks nodes that have a step, bottom-left to stay clear of the
+   db (top-left) and notes (top-right) badge corners. */
+.walk-badge {
+  position: absolute;
+  bottom: -8px; left: -8px;
+  width: 18px; height: 18px;
+  border-radius: 9px;
+  background: #39ff14; /* DOT_COLOR */
+  color: #06281d;
+  font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+}
+/* Everything dims while a playthrough runs; the active section node and the hop's
+   edge pop back to full opacity with the selected treatment. */
+.app.playing .node, .app.playing svg.edges g { opacity: .35; transition: opacity .2s; }
+.app.playing .node.walk-active, .app.playing svg.edges g.walk-active { opacity: 1; }
+.app.playing .node.walk-active .box { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,140,255,.22); }
+/* The neon "request" dot layer: pans/zooms with .canvas-inner, above edges and
+   nodes so the glow reads over borders. */
+.walk-dot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+  overflow: visible;
+}
+/* The step panel: translucent, pinned right, stopping above the zoom cluster.
+   Width must match PANEL_W in lib/playthrough.ts. */
+.walk-panel {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  bottom: 64px;
+  width: 228px;
+  background: rgba(23, 29, 43, .8); /* --panel at 80% */
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 15;
+}
+.walk-eyebrow { font-size: 10.5px; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; }
+.walk-title { font-size: 14px; font-weight: 650; }
+.walk-hop-line { font-size: 11px; color: var(--muted); }
+.walk-body { flex: 1; overflow-y: auto; font-size: 12.5px; color: #cdd5e4; line-height: 1.6; }
+.walk-dots { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.walk-progress-dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: var(--border);
+  cursor: pointer;
+  transition: width .15s, background .15s;
+}
+.walk-progress-dot.active { width: 18px; background: #39ff14; /* DOT_COLOR */ }
+.walk-actions { display: flex; justify-content: space-between; gap: 8px; }
+.walk-actions button {
+  flex: 1;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.walk-actions button:disabled { opacity: .4; cursor: default; }
+.walk-actions button.primary { background: var(--accent); border-color: var(--accent); color: #06101f; }
+.walk-hint { font-size: 11px; color: var(--muted); text-align: center; }
+@keyframes walk-halo {
+  0%, 100% { r: 7px; opacity: .3; }
+  50% { r: 11px; opacity: .1; }
+}
+.walk-halo { animation: walk-halo 1.6s ease-in-out infinite; }
+/* Camera follow eases the pan between steps. */
+.app.playing .canvas-inner { transition: transform .3s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .walk-halo { animation: none; }
+  .app.playing .canvas-inner { transition: none; }
+}

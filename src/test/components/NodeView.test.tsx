@@ -3,6 +3,7 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
+import { PlaythroughProvider, usePlaythrough } from '../../store/PlaythroughContext';
 import { NodeView } from '../../components/NodeView';
 import type { GraphState } from '../../types';
 
@@ -36,16 +37,37 @@ function SelectAllButton({ ids }: { ids: string[] }) {
   return <button onClick={() => selectNodes(ids)}>select-all</button>;
 }
 
+/** Test-only trigger to start a playthrough (the toolbar button lives elsewhere). */
+function WalkControls() {
+  const { start } = usePlaythrough();
+  return <button onClick={start}>walk-start</button>;
+}
+
+/** Test-only undo/redo triggers (the keyboard shortcuts live in Canvas's useKeyboard). */
+function UndoControls() {
+  const { dispatch } = useGraph();
+  return (
+    <>
+      <button onClick={() => dispatch({ type: 'UNDO' })}>undo</button>
+      <button onClick={() => dispatch({ type: 'REDO' })}>redo</button>
+    </>
+  );
+}
+
 function renderNodes(initial: GraphState, multiIds?: string[]) {
   return render(
     <GraphProvider initial={initial}>
       <UIProvider>
         <ViewportProvider>
-          <Probe />
-          <ZoomProbe />
-          {multiIds && <SelectAllButton ids={multiIds} />}
-          <NodeView node={initial.nodes.n1} />
-          <NodeView node={initial.nodes.n2} />
+          <PlaythroughProvider>
+            <Probe />
+            <ZoomProbe />
+            <WalkControls />
+            <UndoControls />
+            {multiIds && <SelectAllButton ids={multiIds} />}
+            <NodeView node={initial.nodes.n1} />
+            <NodeView node={initial.nodes.n2} />
+          </PlaythroughProvider>
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>,
@@ -370,6 +392,104 @@ describe('NodeView notes (C2)', () => {
     fireEvent.click(document.body);
     expect(document.querySelector('.ctx')).toBeNull();
     expect(document.querySelector('.notes-modal')).toBeNull();
+  });
+});
+
+describe('NodeView playthrough highlight (P4)', () => {
+  const walkSeed = () => seed({ walkthrough: [{ nodeId: 'n1', text: 'a' }, { nodeId: 'n2', text: 'b' }] });
+
+  it('never marks nodes walk-active while not playing', () => {
+    const { container } = renderNodes(walkSeed());
+    expect(container.querySelector('.walk-active')).toBeNull();
+  });
+
+  it('marks only the current step node, following real arrow-key steps', () => {
+    const { container } = renderNodes(walkSeed());
+    fireEvent.click(screen.getByText('walk-start'));
+    expect(container.querySelector('[data-id="n1"]')).toHaveClass('walk-active');
+    expect(container.querySelector('[data-id="n2"]')).not.toHaveClass('walk-active');
+    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    expect(container.querySelector('[data-id="n1"]')).not.toHaveClass('walk-active');
+    expect(container.querySelector('[data-id="n2"]')).toHaveClass('walk-active');
+    fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
+    expect(container.querySelector('[data-id="n1"]')).toHaveClass('walk-active');
+  });
+});
+
+describe('NodeView playthrough authoring (P6)', () => {
+  const rightClick = (container: HTMLElement, id: string) =>
+    fireEvent.contextMenu(container.querySelector(`[data-id="${id}"]`)!, { clientX: 10, clientY: 10 });
+  const addStep = (container: HTMLElement, id: string, text: string) => {
+    rightClick(container, id);
+    fireEvent.click(screen.getByText('▶ Playthrough step…'));
+    fireEvent.change(screen.getByLabelText('Playthrough step text'), { target: { value: text } });
+    fireEvent.click(screen.getByText('Save'));
+  };
+
+  it('offers the add/edit item without a remove item when the node has no step', () => {
+    const { container } = renderNodes(seed());
+    rightClick(container, 'n1');
+    expect(screen.getByText('▶ Playthrough step…')).toBeInTheDocument();
+    expect(screen.queryByText('🗑 Remove playthrough step')).toBeNull();
+  });
+
+  it('offers a danger remove item once the node has a step', () => {
+    const { container } = renderNodes(seed({ walkthrough: [{ nodeId: 'n1', text: 'a' }] }));
+    rightClick(container, 'n1');
+    const remove = screen.getByText('🗑 Remove playthrough step');
+    expect(remove).toHaveClass('danger');
+  });
+
+  it('opens the step editor from the menu (closing it) and saves an upserted step + badge', () => {
+    const { container } = renderNodes(seed());
+    expect(container.querySelector('.walk-badge')).toBeNull();
+    rightClick(container, 'n1');
+    fireEvent.click(screen.getByText('▶ Playthrough step…'));
+    expect(document.querySelector('.ctx')).toBeNull();
+    expect(document.querySelector('.walk-modal')).not.toBeNull();
+    fireEvent.change(screen.getByLabelText('Playthrough step text'), { target: { value: 'request arrives' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(document.querySelector('.walk-modal')).toBeNull();
+    expect(probeState!.walkthrough).toEqual([{ nodeId: 'n1', text: 'request arrives' }]);
+    expect(container.querySelector('[data-id="n1"] .walk-badge')).toHaveTextContent('▶');
+    expect(container.querySelector('[data-id="n2"] .walk-badge')).toBeNull();
+  });
+
+  it('prefills the editor with the node\'s existing step and cancel leaves state untouched', () => {
+    const { container } = renderNodes(seed({ walkthrough: [{ nodeId: 'n1', text: 'existing' }] }));
+    rightClick(container, 'n1');
+    fireEvent.click(screen.getByText('▶ Playthrough step…'));
+    expect(screen.getByLabelText('Playthrough step text')).toHaveValue('existing');
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(probeState!.walkthrough).toEqual([{ nodeId: 'n1', text: 'existing' }]);
+  });
+
+  it('removes the step (and badge) via the menu item', () => {
+    const { container } = renderNodes(seed({ walkthrough: [{ nodeId: 'n1', text: 'a' }] }));
+    expect(container.querySelector('[data-id="n1"] .walk-badge')).not.toBeNull();
+    rightClick(container, 'n1');
+    fireEvent.click(screen.getByText('🗑 Remove playthrough step'));
+    expect(probeState!.walkthrough).toEqual([]);
+    expect(container.querySelector('[data-id="n1"] .walk-badge')).toBeNull();
+  });
+
+  it('add → edit → remove all undo/redo cleanly through real events', () => {
+    const { container } = renderNodes(seed());
+    addStep(container, 'n1', 'v1');
+    addStep(container, 'n1', 'v2');
+    rightClick(container, 'n1');
+    fireEvent.click(screen.getByText('🗑 Remove playthrough step'));
+    expect(probeState!.walkthrough).toEqual([]);
+
+    fireEvent.click(screen.getByText('undo'));
+    expect(probeState!.walkthrough).toEqual([{ nodeId: 'n1', text: 'v2' }]);
+    fireEvent.click(screen.getByText('undo'));
+    expect(probeState!.walkthrough).toEqual([{ nodeId: 'n1', text: 'v1' }]);
+    fireEvent.click(screen.getByText('undo'));
+    expect(probeState!.walkthrough).toBeUndefined();
+    fireEvent.click(screen.getByText('redo'));
+    expect(probeState!.walkthrough).toEqual([{ nodeId: 'n1', text: 'v1' }]);
+    expect(container.querySelector('[data-id="n1"] .walk-badge')).not.toBeNull();
   });
 });
 
