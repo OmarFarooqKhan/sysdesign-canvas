@@ -8,6 +8,8 @@ import { toData, download, parse } from '../lib/io';
 import { exportPng } from '../lib/exportPng';
 import { downloadSvg } from '../lib/exportSvg';
 import { AlertDialog } from './AlertDialog';
+import { ConfirmDialog } from './ConfirmDialog';
+import { useConfirmAction } from '../hooks/useConfirmAction';
 import { LibraryButton } from './LibraryButton';
 import { ShareButton } from './ShareButton';
 import { PresentButton } from './PresentButton';
@@ -20,6 +22,7 @@ export function Toolbar() {
   const { panMode, togglePanMode, setViewport, canvasRef, presenting } = useViewport();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [alertMsg, setAlertMsg] = useState<string | null>(null);
+  const { pending, request, resolve, cancel } = useConfirmAction();
 
   const handleFit = () => {
     const bounds = contentBounds(state);
@@ -30,14 +33,14 @@ export function Toolbar() {
 
   const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const key = e.target.value as TemplateKey | '';
-    if (key) {
-      const hasNodes = Object.keys(state.nodes).length > 0;
-      if (!hasNodes || confirm('Replace the current canvas with this template?')) {
-        dispatch({ type: 'LOAD', data: templateToData(key) });
-        setEdgeMode('curved');
-      }
-    }
     e.target.value = '';
+    if (!key) return;
+    const load = () => {
+      dispatch({ type: 'LOAD', data: templateToData(key) });
+      setEdgeMode('curved');
+    };
+    if (Object.keys(state.nodes).length === 0) return load();
+    request('Replace the current canvas with this template?', load);
   };
 
   const handleExportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -64,13 +67,10 @@ export function Toolbar() {
     e.target.value = '';
   };
 
-  const handleClear = () => {
-    if (confirm('Clear the whole canvas?')) dispatch({ type: 'CLEAR' });
-  };
-
   return (
     <header>
       {alertMsg && <AlertDialog message={alertMsg} onClose={() => setAlertMsg(null)} />}
+      {pending && <ConfirmDialog message={pending.message} onConfirm={resolve} onCancel={cancel} />}
       <h1>🧩 System Design Canvas</h1>
       <span className="hint">Drag from the palette · click to connect</span>
       <div className="spacer" />
@@ -93,7 +93,7 @@ export function Toolbar() {
       </select>
       <button disabled={presenting} onClick={handleImportClick}>Import</button>
       <input ref={fileInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={handleFileChange} />
-      <button className="group-start danger" disabled={presenting} onClick={handleClear}>Clear</button>
+      <button className="group-start danger" disabled={presenting} onClick={() => request('Clear the whole canvas?', () => dispatch({ type: 'CLEAR' }))}>Clear</button>
     </header>
   );
 }

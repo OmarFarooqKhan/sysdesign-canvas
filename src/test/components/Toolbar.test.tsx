@@ -50,12 +50,9 @@ function renderHarness() {
 }
 
 describe('Toolbar', () => {
-  let confirmSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     exportPngMock.mockClear();
     downloadSvgMock.mockClear();
-    confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     (URL as unknown as { createObjectURL: typeof URL.createObjectURL }).createObjectURL = vi.fn(() => 'blob:mock');
     (URL as unknown as { revokeObjectURL: typeof URL.revokeObjectURL }).revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -96,17 +93,17 @@ describe('Toolbar', () => {
     expect(edgeBtn).not.toHaveClass('active');
   });
 
-  it('template select without existing nodes loads without confirm', async () => {
+  it('template select without existing nodes loads without a confirm dialog', async () => {
     const user = userEvent.setup();
     renderHarness();
     const select = screen.getByRole('combobox', { name: 'Templates' });
     await user.selectOptions(select, 'url');
-    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
     expect(screen.getByTestId('node-count')).toHaveTextContent('6');
     expect((select as HTMLSelectElement).value).toBe('');
   });
 
-  it('template select with existing nodes: confirm true replaces canvas', async () => {
+  it('template select with existing nodes: confirming OK replaces canvas', async () => {
     const user = userEvent.setup();
     renderHarness();
     await user.click(screen.getByText('seed-node'));
@@ -114,15 +111,16 @@ describe('Toolbar', () => {
     await user.click(edgeBtn);
     expect(edgeBtn).toHaveTextContent('Edges: Orthogonal');
 
-    confirmSpy.mockReturnValue(true);
     const select = screen.getByRole('combobox', { name: 'Templates' });
     await user.selectOptions(select, 'chat');
-    expect(confirmSpy).toHaveBeenCalledWith('Replace the current canvas with this template?');
+    expect(screen.getByText('Replace the current canvas with this template?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
     expect(screen.getByTestId('node-count')).toHaveTextContent('6');
     expect(edgeBtn).toHaveTextContent('Edges: Curved');
   });
 
-  it('template select with existing nodes: confirm false keeps canvas', async () => {
+  it('template select with existing nodes: cancelling keeps canvas', async () => {
     const user = userEvent.setup();
     renderHarness();
     await user.click(screen.getByText('seed-node'));
@@ -130,10 +128,10 @@ describe('Toolbar', () => {
     await user.click(edgeBtn);
     expect(edgeBtn).toHaveTextContent('Edges: Orthogonal');
 
-    confirmSpy.mockReturnValue(false);
     const select = screen.getByRole('combobox', { name: 'Templates' });
     await user.selectOptions(select, 'chat');
-    expect(confirmSpy).toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
     expect(edgeBtn).toHaveTextContent('Edges: Orthogonal');
   });
@@ -210,23 +208,35 @@ describe('Toolbar', () => {
     expect(document.querySelector('.alert-modal')).not.toBeInTheDocument();
   });
 
-  it('clear with confirm true empties the canvas', async () => {
+  it('clear: confirming OK empties the canvas', async () => {
     const user = userEvent.setup();
     renderHarness();
     await user.click(screen.getByText('seed-node'));
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
-    confirmSpy.mockReturnValue(true);
     await user.click(screen.getByRole('button', { name: 'Clear' }));
-    expect(confirmSpy).toHaveBeenCalledWith('Clear the whole canvas?');
+    expect(screen.getByText('Clear the whole canvas?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
     expect(screen.getByTestId('node-count')).toHaveTextContent('0');
   });
 
-  it('clear with confirm false keeps the canvas', async () => {
+  it('clear: cancelling keeps the canvas', async () => {
     const user = userEvent.setup();
     renderHarness();
     await user.click(screen.getByText('seed-node'));
-    confirmSpy.mockReturnValue(false);
     await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+  });
+
+  it('clear: pressing Escape keeps the canvas', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('seed-node'));
+    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.keyboard('{Escape}');
+    expect(document.querySelector('.alert-backdrop')).not.toBeInTheDocument();
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
   });
 

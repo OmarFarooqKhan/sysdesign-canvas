@@ -63,8 +63,9 @@ sysdesign-canvas/
 │   ├── vite-env.d.ts
 │   ├── index.css               # global styles
 │   ├── components/
-│   │   ├── AlertDialog.tsx      # generic confirm/dismiss modal (Escape closes)
+│   │   ├── AlertDialog.tsx      # generic dismiss-only modal, window.alert() replacement (Escape closes)
 │   │   ├── Canvas.tsx           # main drop/drag surface (integration glue, untested directly)
+│   │   ├── ConfirmDialog.tsx    # generic OK/Cancel modal, window.confirm() replacement (Escape cancels)
 │   │   ├── ContextMenu.tsx      # generic right-click menu, closes on outside click
 │   │   ├── EdgeLayer.tsx        # renders all edges + handles edge interactions
 │   │   ├── EdgeView.tsx         # single edge (path + arrowhead + drag-to-bend)
@@ -101,6 +102,7 @@ sysdesign-canvas/
 │   │   ├── useAutoHideScrollbars.ts   # theme scrollbars that fade out after idle
 │   │   ├── useAutosave.ts              # debounced localStorage autosave of graph state
 │   │   ├── useClipboardKeys.ts          # mod+C/V/D copy/paste/duplicate shortcuts
+│   │   ├── useConfirmAction.ts           # pending confirm-then-run request state, for ConfirmDialog
 │   │   ├── useKeyboard.ts                # undo/redo/delete/nudge shortcuts
 │   │   ├── useLinkDrag.ts                 # port-to-port edge-creation drag, per NodeView
 │   │   ├── useNodeDrag.ts                  # node drag incl. group move + snap-to-grid/guides
