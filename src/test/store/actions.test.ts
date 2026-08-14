@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyGraph, isSessionAction, maxIdNum } from '../../store/actions';
+import { emptyGraph, fromData, isSessionAction, maxIdNum } from '../../store/actions';
 
 describe('action helpers', () => {
   it('emptyGraph is a fresh zeroed graph', () => {
@@ -20,5 +20,21 @@ describe('action helpers', () => {
     expect(maxIdNum(['n1', 'e12', 'r3'])).toBe(12);
     expect(maxIdNum([])).toBe(0);
     expect(maxIdNum(['abc'])).toBe(0);
+  });
+
+  it('fromData rebuilds graph state and restores seq from the highest id', () => {
+    const out = fromData({
+      nodes: [{ id: 'n3', key: 'a', icon: 'a', label: 'A', x: 0, y: 0 }],
+      edges: [{ id: 'e2', from: 'n3', to: 'n3', label: '' }],
+      regions: [{ id: 'r5', title: 'T', x: 0, y: 0, w: 200, h: 150, color: '#fff' }],
+    });
+    expect(out.seq).toBe(5);
+    expect(out.nodes.n3).toBeDefined();
+    expect(out.edges).toHaveLength(1);
+    expect(out.regions).toHaveLength(1);
+  });
+
+  it('fromData on an empty diagram yields an empty (zero-seq) state', () => {
+    expect(fromData({ nodes: [], edges: [], regions: [] })).toEqual(emptyGraph());
   });
 });

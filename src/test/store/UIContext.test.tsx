@@ -90,4 +90,9 @@ describe('UIContext', () => {
     expect(() => render(<Probe />)).toThrow(/UIProvider/);
     vi.restoreAllMocks();
   });
+
+  it('seeds edge mode from initialEdgeMode when provided', () => {
+    render(<UIProvider initialEdgeMode="ortho"><Probe /></UIProvider>);
+    expect(screen.getByTestId('mode')).toHaveTextContent('ortho');
+  });
 });

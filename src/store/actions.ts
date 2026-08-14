@@ -33,3 +33,11 @@ export const emptyGraph = (): GraphState => ({ nodes: {}, edges: [], regions: []
 
 export const maxIdNum = (ids: string[]): number =>
   ids.reduce((m, id) => Math.max(m, parseInt(id.replace(/\D/g, '')) || 0), 0);
+
+/** Build fresh graph state from a serialized diagram, deriving `seq` from the highest id. */
+export function fromData(data: GraphData): GraphState {
+  const nodes: Record<string, GraphNode> = {};
+  data.nodes.forEach((n) => { nodes[n.id] = n; });
+  const ids = [...data.nodes, ...data.edges, ...data.regions].map((x) => x.id);
+  return { nodes, edges: data.edges, regions: data.regions, seq: maxIdNum(ids) };
+}

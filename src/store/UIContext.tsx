@@ -21,11 +21,11 @@ export interface UIContextValue {
 
 const Ctx = createContext<UIContextValue | null>(null);
 
-export function UIProvider({ children }: { children: ReactNode }) {
+export function UIProvider({ children, initialEdgeMode }: { children: ReactNode; initialEdgeMode?: EdgeMode }) {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
-  const [edgeMode, setEdgeMode] = useState<EdgeMode>('curved');
+  const [edgeMode, setEdgeMode] = useState<EdgeMode>(initialEdgeMode ?? 'curved');
 
   const selectNode = useCallback((id: string | null) => {
     setSelectedNodeIds(id ? [id] : []); setSelectedRegionId(null); setSelectedEdgeId(null);

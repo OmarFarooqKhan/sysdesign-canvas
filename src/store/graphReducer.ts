@@ -1,5 +1,5 @@
 import type { GraphNode, GraphState, Region } from '../types';
-import { type GraphAction, REGION_COLORS, emptyGraph, maxIdNum } from './actions';
+import { type GraphAction, REGION_COLORS, emptyGraph, fromData } from './actions';
 
 export function graphReducer(s: GraphState, a: GraphAction): GraphState {
   switch (a.type) {
@@ -68,12 +68,8 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
       return { ...s, regions: patch(s, a.id, { title: a.title }) };
     case 'DELETE_REGION':
       return { ...s, regions: s.regions.filter((r) => r.id !== a.id) };
-    case 'LOAD': {
-      const nodes: Record<string, GraphNode> = {};
-      a.data.nodes.forEach((n) => { nodes[n.id] = n; });
-      const ids = [...a.data.nodes, ...a.data.edges, ...a.data.regions].map((x) => x.id);
-      return { nodes, edges: a.data.edges, regions: a.data.regions, seq: maxIdNum(ids) };
-    }
+    case 'LOAD':
+      return fromData(a.data);
     case 'CLEAR':
       return emptyGraph();
   }

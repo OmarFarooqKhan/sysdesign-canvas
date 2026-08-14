@@ -8,6 +8,8 @@ import type { TemplateKey } from '../data/templates';
 import { toData, download, parse } from '../lib/io';
 import { exportPng } from '../lib/exportPng';
 import { AlertDialog } from './AlertDialog';
+import { LibraryButton } from './LibraryButton';
+import { ShareButton } from './ShareButton';
 
 /** Top header bar: templates, region/edge tools, import/export, clear. */
 export function Toolbar() {
@@ -34,10 +36,6 @@ export function Toolbar() {
       }
     }
     e.target.value = '';
-  };
-
-  const handleAddRegion = () => {
-    dispatch({ type: 'ADD_REGION', region: { x: 60 + Math.random() * 40, y: 60 + Math.random() * 40 } });
   };
 
   const handleExportChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -79,10 +77,12 @@ export function Toolbar() {
           <option key={t.key} value={t.key}>{t.label}</option>
         ))}
       </select>
-      <button onClick={handleAddRegion}>+ Region</button>
+      <button onClick={() => dispatch({ type: 'ADD_REGION', region: { x: 60 + Math.random() * 40, y: 60 + Math.random() * 40 } })}>+ Region</button>
       <button aria-pressed={edgeMode === 'ortho'} className={edgeMode === 'ortho' ? 'active' : undefined} onClick={toggleEdgeMode}>Edges: {edgeMode === 'curved' ? 'Curved' : 'Orthogonal'}</button>
       <button onClick={handleFit}>⤢ Fit</button>
       <button aria-pressed={panMode} className={panMode ? 'active' : undefined} onClick={togglePanMode}>✋ Pan</button>
+      <LibraryButton />
+      <ShareButton />
       <select className="group-start" defaultValue="" onChange={handleExportChange} aria-label="Export">
         <option value="">Export…</option>
         <option value="json">as JSON</option>
