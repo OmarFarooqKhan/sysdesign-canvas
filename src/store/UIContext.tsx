@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { EdgeMode } from '../types';
+import type { ClipboardData } from '../lib/clipboard';
 
 export interface UIContextValue {
   /** The lone selected node id, or null when zero or more-than-one nodes are selected. */
@@ -10,6 +11,8 @@ export interface UIContextValue {
   selectedRegionId: string | null;
   selectedEdgeId: string | null;
   edgeMode: EdgeMode;
+  /** In-app copy/paste slot: plain data, not serialized, not undoable. */
+  clipboard: ClipboardData | null;
   selectNode: (id: string | null) => void;
   selectNodes: (ids: string[]) => void;
   selectRegion: (id: string | null) => void;
@@ -17,6 +20,7 @@ export interface UIContextValue {
   clearSelection: () => void;
   toggleEdgeMode: () => void;
   setEdgeMode: (m: EdgeMode) => void;
+  setClipboard: (c: ClipboardData | null) => void;
 }
 
 const Ctx = createContext<UIContextValue | null>(null);
@@ -26,6 +30,7 @@ export function UIProvider({ children, initialEdgeMode }: { children: ReactNode;
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
   const [edgeMode, setEdgeMode] = useState<EdgeMode>(initialEdgeMode ?? 'curved');
+  const [clipboard, setClipboard] = useState<ClipboardData | null>(null);
 
   const selectNode = useCallback((id: string | null) => {
     setSelectedNodeIds(id ? [id] : []); setSelectedRegionId(null); setSelectedEdgeId(null);
@@ -46,8 +51,8 @@ export function UIProvider({ children, initialEdgeMode }: { children: ReactNode;
 
   const value: UIContextValue = {
     selectedId: selectedNodeIds.length === 1 ? selectedNodeIds[0] : null,
-    selectedNodeIds, selectedRegionId, selectedEdgeId, edgeMode,
-    selectNode, selectNodes, selectRegion, selectEdge, clearSelection, toggleEdgeMode, setEdgeMode,
+    selectedNodeIds, selectedRegionId, selectedEdgeId, edgeMode, clipboard,
+    selectNode, selectNodes, selectRegion, selectEdge, clearSelection, toggleEdgeMode, setEdgeMode, setClipboard,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

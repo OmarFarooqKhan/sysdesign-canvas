@@ -24,6 +24,11 @@ function Harness() {
       <span data-testid="region-count">{state.regions.length}</span>
       <span data-testid="edge-count">{state.edges.length}</span>
       <span data-testid="selected-count">{selectedNodeIds.length}</span>
+      <span data-testid="n1-x">{state.nodes.n1?.x ?? '-'}</span>
+      <span data-testid="n1-y">{state.nodes.n1?.y ?? '-'}</span>
+      <span data-testid="n2-x">{state.nodes.n2?.x ?? '-'}</span>
+      <span data-testid="r1-x">{state.regions.find((r) => r.id === 'r1')?.x ?? '-'}</span>
+      <span data-testid="r1-y">{state.regions.find((r) => r.id === 'r1')?.y ?? '-'}</span>
       <div contentEditable data-testid="editable" suppressContentEditableWarning>
         edit
       </div>
@@ -144,5 +149,127 @@ describe('useKeyboard', () => {
     expect(document.activeElement).toBe(screen.getByTestId('editable'));
     fireEvent.keyDown(document, { key: 'Delete' });
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+  });
+});
+
+describe('useKeyboard arrow-key nudge (B2)', () => {
+  it('ArrowRight nudges the selected node by 1px', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node')); // n1 at (0,0)
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('1');
+    expect(screen.getByTestId('n1-y')).toHaveTextContent('0');
+  });
+
+  it('Shift+ArrowDown nudges the selected node by 8px', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowDown', shiftKey: true });
+    expect(screen.getByTestId('n1-y')).toHaveTextContent('8');
+  });
+
+  it('ArrowUp and ArrowLeft move in the negative direction, clamped to non-negative', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowUp' });
+    fireEvent.keyDown(document, { key: 'ArrowLeft' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
+    expect(screen.getByTestId('n1-y')).toHaveTextContent('0');
+  });
+
+  it('nudges every node in a multi-selection together', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node')); // n1
+    await user.click(screen.getByText('add-node')); // n2
+    await user.click(screen.getByText('select-two-nodes'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('1');
+    expect(screen.getByTestId('n2-x')).toHaveTextContent('1');
+  });
+
+  it('holding a key (repeated keydown, no keyup) coalesces into a single undo entry', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('3');
+    fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0'); // one undo reverts all three
+  });
+
+  it('keyup ends the session, so a later press is a separate undo entry', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyUp(document, { key: 'ArrowRight' });
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyUp(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('2');
+    fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('1'); // only the second press undoes
+  });
+
+  it('keyup for a non-arrow key does not end an in-progress nudge session', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyUp(document, { key: 'Shift' }); // unrelated keyup — must not close the session
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('2');
+    fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0'); // one undo reverts both presses
+  });
+
+  it('a lone selected region nudges via MOVE_REGION', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-region')); // r1 at default (80,80)
+    await user.click(screen.getByText('select-region'));
+    fireEvent.keyDown(document, { key: 'ArrowRight', shiftKey: true });
+    expect(screen.getByTestId('r1-x')).toHaveTextContent('88');
+    expect(screen.getByTestId('r1-y')).toHaveTextContent('80');
+  });
+
+  it('arrow keys do nothing when neither a node nor a region is selected', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
+  });
+
+  it('is a safe no-op for a region selection left dangling after the region was deleted', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-region'));
+    await user.click(screen.getByText('select-region'));
+    fireEvent.keyDown(document, { key: 'Delete' }); // deletes r1 without clearing selectedRegionId
+    expect(screen.getByTestId('region-count')).toHaveTextContent('0');
+    fireEvent.keyDown(document, { key: 'ArrowRight' }); // must not throw
+    expect(screen.getByTestId('region-count')).toHaveTextContent('0');
+  });
+
+  it('ignores shortcuts while a contentEditable element is focused', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    screen.getByTestId('editable').focus();
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
   });
 });

@@ -72,6 +72,22 @@ export function graphReducer(s: GraphState, a: GraphAction): GraphState {
       return fromData(a.data);
     case 'CLEAR':
       return emptyGraph();
+    case 'ADD_ITEMS': {
+      let seq = s.seq;
+      const idMap: Record<string, string> = {};
+      const nodes = { ...s.nodes };
+      for (const n of a.nodes) {
+        seq += 1;
+        const id = `n${seq}`;
+        idMap[n.id] = id;
+        nodes[id] = { ...n, id, x: Math.max(0, n.x), y: Math.max(0, n.y) };
+      }
+      const newEdges = a.edges.map((e) => {
+        seq += 1;
+        return { ...e, id: `e${seq}`, from: idMap[e.from], to: idMap[e.to] };
+      });
+      return { ...s, nodes, edges: [...s.edges, ...newEdges], seq };
+    }
   }
 }
 

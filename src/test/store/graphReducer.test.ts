@@ -160,3 +160,43 @@ describe('graphReducer load/clear', () => {
     expect(graphReducer(base(), { type: 'CLEAR' })).toEqual(emptyGraph());
   });
 });
+
+describe('graphReducer ADD_ITEMS (copy/paste/duplicate)', () => {
+  it('inserts nodes with fresh ids and remaps internal edge endpoints, bumping seq once', () => {
+    const s = base(); // seq: 1
+    const out = graphReducer(s, {
+      type: 'ADD_ITEMS',
+      nodes: [
+        { id: 'old1', key: 'server', icon: 'server', label: 'A', x: 10, y: 10 },
+        { id: 'old2', key: 'sql', icon: 'sql', label: 'B', x: 20, y: 20 },
+      ],
+      edges: [{ id: 'oldE', from: 'old1', to: 'old2', label: 'x' }],
+    });
+    expect(out.seq).toBe(4); // 1 + 2 nodes + 1 edge
+    expect(Object.keys(out.nodes)).toEqual(['n1', 'n2', 'n3']);
+    expect(out.nodes.n2).toMatchObject({ id: 'n2', label: 'A', x: 10, y: 10 });
+    expect(out.nodes.n3).toMatchObject({ id: 'n3', label: 'B', x: 20, y: 20 });
+    expect(out.edges).toHaveLength(2); // the original e1 plus the newly inserted one
+    expect(out.edges[1]).toMatchObject({ id: 'e4', from: 'n2', to: 'n3', label: 'x' });
+  });
+
+  it('clamps pasted node positions to non-negative', () => {
+    const out = graphReducer(emptyGraph(), {
+      type: 'ADD_ITEMS',
+      nodes: [{ id: 'old', key: 'server', icon: 'server', label: 'A', x: -5, y: -9 }],
+      edges: [],
+    });
+    expect(out.nodes.n1).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('inserting only nodes (no edges) leaves the existing edge list untouched', () => {
+    const s = base();
+    const out = graphReducer(s, {
+      type: 'ADD_ITEMS',
+      nodes: [{ id: 'old', key: 'server', icon: 'server', label: 'A', x: 0, y: 0 }],
+      edges: [],
+    });
+    expect(out.edges).toEqual(s.edges);
+    expect(out.seq).toBe(2);
+  });
+});

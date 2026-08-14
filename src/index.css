@@ -285,6 +285,16 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
   border-radius: 2px;
 }
 
+.guide {
+  position: absolute;
+  z-index: 40;
+  pointer-events: none;
+  background: var(--accent-2);
+  opacity: .7;
+}
+.guide-v { width: 1px; }
+.guide-h { height: 1px; }
+
 .empty-state {
   position: absolute;
   top: 50%; left: 50%;

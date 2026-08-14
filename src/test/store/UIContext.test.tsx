@@ -11,6 +11,7 @@ function Probe() {
       <span data-testid="region">{ui.selectedRegionId ?? '-'}</span>
       <span data-testid="edge">{ui.selectedEdgeId ?? '-'}</span>
       <span data-testid="mode">{ui.edgeMode}</span>
+      <span data-testid="clip">{ui.clipboard ? ui.clipboard.nodes.length : '-'}</span>
       <button onClick={() => ui.selectNode('n1')}>selN</button>
       <button onClick={() => ui.selectNode(null)}>selNull</button>
       <button onClick={() => ui.selectNodes(['n1', 'n2', 'n3'])}>selMulti</button>
@@ -19,6 +20,10 @@ function Probe() {
       <button onClick={() => ui.clearSelection()}>clear</button>
       <button onClick={() => ui.toggleEdgeMode()}>toggle</button>
       <button onClick={() => ui.setEdgeMode('ortho')}>ortho</button>
+      <button onClick={() => ui.setClipboard({ nodes: [{ id: 'n1', key: 'a', icon: 'a', label: 'A', x: 0, y: 0 }], edges: [] })}>
+        copy
+      </button>
+      <button onClick={() => ui.setClipboard(null)}>clearClip</button>
     </div>
   );
 }
@@ -94,5 +99,14 @@ describe('UIContext', () => {
   it('seeds edge mode from initialEdgeMode when provided', () => {
     render(<UIProvider initialEdgeMode="ortho"><Probe /></UIProvider>);
     expect(screen.getByTestId('mode')).toHaveTextContent('ortho');
+  });
+
+  it('clipboard starts empty and can be set and cleared', () => {
+    setup();
+    expect(screen.getByTestId('clip')).toHaveTextContent('-');
+    fireEvent.click(screen.getByText('copy'));
+    expect(screen.getByTestId('clip')).toHaveTextContent('1');
+    fireEvent.click(screen.getByText('clearClip'));
+    expect(screen.getByTestId('clip')).toHaveTextContent('-');
   });
 });

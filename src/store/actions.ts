@@ -1,4 +1,4 @@
-import type { GraphData, GraphNode, GraphState, NodeDef, Region } from '../types';
+import type { Edge, GraphData, GraphNode, GraphState, NodeDef, Region } from '../types';
 
 export const REGION_COLORS = ['#4f8cff', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#38bdf8'];
 
@@ -20,7 +20,8 @@ export type GraphAction =
   | { type: 'RENAME_REGION'; id: string; title: string }
   | { type: 'DELETE_REGION'; id: string }
   | { type: 'LOAD'; data: GraphData }
-  | { type: 'CLEAR' };
+  | { type: 'CLEAR' }
+  | { type: 'ADD_ITEMS'; nodes: GraphNode[]; edges: Edge[] };
 
 const SESSION_TYPES = new Set<GraphAction['type']>([
   'MOVE_NODE', 'MOVE_NODES', 'MOVE_REGION', 'RESIZE_REGION', 'BEND_EDGE',

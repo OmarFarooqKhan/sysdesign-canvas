@@ -54,12 +54,14 @@ function renderNodes(initial: GraphState, multiIds?: string[]) {
 
 describe('NodeView', () => {
   it('drags to update position with one undo step', () => {
+    // altKey bypasses snap-to-grid/alignment (see the dedicated snap describe block below) so
+    // this exercises plain drag-to-position arithmetic with exact pixel expectations.
     const initial = seed();
     const { container } = renderNodes(initial);
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: 140, clientY: 120 });
-    fireEvent.mouseMove(document, { clientX: 150, clientY: 130 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 120, altKey: true });
+    fireEvent.mouseMove(document, { clientX: 150, clientY: 130, altKey: true });
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n1.x).toBe(150);
     expect(probeState!.nodes.n1.y).toBe(130);
@@ -71,7 +73,7 @@ describe('NodeView', () => {
     fireEvent.click(container.querySelector('[data-testid="zoom-2x"]')!);
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: 140, clientY: 120 });
+    fireEvent.mouseMove(document, { clientX: 140, clientY: 120, altKey: true });
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n1.x).toBe(120);
     expect(probeState!.nodes.n1.y).toBe(110);
@@ -82,7 +84,7 @@ describe('NodeView', () => {
     const { container } = renderNodes(initial);
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: -1000, clientY: -1000 });
+    fireEvent.mouseMove(document, { clientX: -1000, clientY: -1000, altKey: true });
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n1.x).toBe(0);
     expect(probeState!.nodes.n1.y).toBe(0);
@@ -186,7 +188,7 @@ describe('NodeView', () => {
 
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: 130, clientY: 90 });
+    fireEvent.mouseMove(document, { clientX: 130, clientY: 90, altKey: true });
     fireEvent.mouseUp(document);
 
     // n1 started at (100,100), n2 at (300,100); both shift by (30,-10).
@@ -203,7 +205,7 @@ describe('NodeView', () => {
     fireEvent.click(screen.getByText('select-all'));
     const box = container.querySelector('[data-id="n1"] .box')!;
     fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: -1000, clientY: -1000 });
+    fireEvent.mouseMove(document, { clientX: -1000, clientY: -1000, altKey: true });
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n1).toMatchObject({ x: 0, y: 0 });
     expect(probeState!.nodes.n2).toMatchObject({ x: 0, y: 0 });
@@ -215,7 +217,7 @@ describe('NodeView', () => {
     fireEvent.click(screen.getByText('select-all')); // selects only n1, so n2 is not a "group"
     const box = container.querySelector('[data-id="n2"] .box')!;
     fireEvent.mouseDown(box, { clientX: 300, clientY: 100 });
-    fireEvent.mouseMove(document, { clientX: 320, clientY: 110 });
+    fireEvent.mouseMove(document, { clientX: 320, clientY: 110, altKey: true });
     fireEvent.mouseUp(document);
     expect(probeState!.nodes.n2).toMatchObject({ x: 320, y: 110 });
     expect(probeState!.nodes.n1).toMatchObject({ x: 100, y: 100 }); // unaffected, single-drag semantics
@@ -288,5 +290,68 @@ describe('NodeView', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(document.querySelector('.db-modal')).toBeNull();
     expect(probeState!.nodes.n2.db).toBeUndefined();
+  });
+});
+
+describe('NodeView snap-to-grid + alignment guides (B3)', () => {
+  it('snaps to the nearest 8px grid position when no neighbor is nearby', () => {
+    const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 2000, y: 2000 } } });
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 153, clientY: 127 }); // raw candidate (153,127)
+    fireEvent.mouseUp(document);
+    expect(probeState!.nodes.n1).toMatchObject({ x: 152, y: 128 }); // nearest multiples of 8
+  });
+
+  it('snaps to align with a neighboring node\'s edge and renders a visible guide line', () => {
+    const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 400, y: 9000 } } });
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    // raw candidate (398,250): x is 2px from n2's left edge (400, within the 4px tolerance);
+    // y (250) has no neighbor nearby and falls back to the grid.
+    fireEvent.mouseMove(document, { clientX: 398, clientY: 250 });
+    expect(probeState!.nodes.n1).toMatchObject({ x: 400, y: 248 });
+    const verticalLefts = [...container.querySelectorAll('.guide-v')].map((el) => (el as HTMLElement).style.left);
+    expect(verticalLefts).toContain('400px');
+    fireEvent.mouseUp(document);
+  });
+
+  it('holding Alt bypasses snapping entirely and suppresses guides', () => {
+    const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 400, y: 9000 } } });
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 398, clientY: 250, altKey: true });
+    expect(probeState!.nodes.n1).toMatchObject({ x: 398, y: 250 }); // exact raw position, unsnapped
+    expect(container.querySelectorAll('.guide-v, .guide-h')).toHaveLength(0);
+    fireEvent.mouseUp(document);
+  });
+
+  it('a non-Alt group drag also passes the anchor\'s candidate position through snap', () => {
+    const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 2000, y: 2000 } } });
+    const { container } = renderNodes(initial, ['n1', 'n2']);
+    fireEvent.click(screen.getByText('select-all'));
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    // anchor (n1) raw candidate (153,127) grid-snaps to (152,128); with only the two group
+    // members in state, "others" is empty so this is a pure grid snap, not alignment.
+    fireEvent.mouseMove(document, { clientX: 153, clientY: 127 });
+    fireEvent.mouseUp(document);
+    expect(probeState!.nodes.n1).toMatchObject({ x: 152, y: 128 });
+    // the snapped delta (52,28) is applied uniformly to the rest of the group.
+    expect(probeState!.nodes.n2).toMatchObject({ x: 2052, y: 2028 });
+  });
+
+  it('clears guide lines once the drag ends', () => {
+    const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 400, y: 9000 } } });
+    const { container } = renderNodes(initial);
+    const box = container.querySelector('[data-id="n1"] .box')!;
+    fireEvent.mouseDown(box, { clientX: 100, clientY: 100 });
+    fireEvent.mouseMove(document, { clientX: 398, clientY: 250 });
+    expect(container.querySelectorAll('.guide-v, .guide-h').length).toBeGreaterThan(0);
+    fireEvent.mouseUp(document);
+    expect(container.querySelectorAll('.guide-v, .guide-h')).toHaveLength(0);
   });
 });

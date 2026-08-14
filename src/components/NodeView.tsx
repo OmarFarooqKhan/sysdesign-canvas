@@ -8,6 +8,7 @@ import { useLinkDrag } from '../hooks/useLinkDrag';
 import { textOf } from '../lib/dom';
 import { Icon } from './Icon';
 import { LinkPreview } from './LinkPreview';
+import { Guides } from './Guides';
 import { DbInspector } from './db/DbInspector';
 import { dbTableCount, isDbNode } from './db/dbModel';
 
@@ -18,7 +19,7 @@ export function NodeView({ node }: { node: GraphNode }) {
   const [editing, setEditing] = useState(false);
   const [dbOpen, setDbOpen] = useState(false);
 
-  const dragNode = useNodeDrag(node);
+  const { onMouseDown: dragNode, guides } = useNodeDrag(node);
   const { linking, tempLine, onPortMouseDown, onRootMouseUp } = useLinkDrag(node);
 
   const onBoxMouseDown = (e: ReactMouseEvent) => {
@@ -46,23 +47,26 @@ export function NodeView({ node }: { node: GraphNode }) {
   ].filter(Boolean).join(' ');
 
   return (
-    <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>
-      <div className="box" onMouseDown={onBoxMouseDown} onDoubleClick={onBoxDoubleClick}>
-        <Icon name={node.icon} />
-        <div className="port" onMouseDown={onPortMouseDown} />
-        {dbCount > 0 && <span className="db-badge">{dbCount}</span>}
+    <>
+      <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>
+        <div className="box" onMouseDown={onBoxMouseDown} onDoubleClick={onBoxDoubleClick}>
+          <Icon name={node.icon} />
+          <div className="port" onMouseDown={onPortMouseDown} />
+          {dbCount > 0 && <span className="db-badge">{dbCount}</span>}
+        </div>
+        <div
+          ref={labelRef}
+          className="label"
+          contentEditable={editing}
+          suppressContentEditableWarning
+          onDoubleClick={() => setEditing(true)}
+          onBlur={onLabelBlur}
+          onKeyDown={onLabelKeyDown}
+        >{node.label}</div>
+        {tempLine && <LinkPreview {...tempLine} />}
+        {dbOpen && <DbInspector node={node} onClose={() => setDbOpen(false)} />}
       </div>
-      <div
-        ref={labelRef}
-        className="label"
-        contentEditable={editing}
-        suppressContentEditableWarning
-        onDoubleClick={() => setEditing(true)}
-        onBlur={onLabelBlur}
-        onKeyDown={onLabelKeyDown}
-      >{node.label}</div>
-      {tempLine && <LinkPreview {...tempLine} />}
-      {dbOpen && <DbInspector node={node} onClose={() => setDbOpen(false)} />}
-    </div>
+      {guides && <Guides guides={guides} />}
+    </>
   );
 }

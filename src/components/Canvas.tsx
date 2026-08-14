@@ -4,6 +4,7 @@ import type { NodeDef } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useViewport } from '../store/ViewportContext';
 import { useKeyboard } from '../hooks/useKeyboard';
+import { useClipboardKeys } from '../hooks/useClipboardKeys';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { screenToCanvas } from '../lib/viewport';
 import { EdgeLayer } from './EdgeLayer';
@@ -18,6 +19,7 @@ export function Canvas() {
   const { state, dispatch } = useGraph();
   const { zoom, panX, panY, panMode, canvasRef, setViewport } = useViewport();
   useKeyboard();
+  useClipboardKeys();
   const panStart = useRef({ x: 0, y: 0 });
   const { onMouseDown: startMarquee, rect: marqueeRect } = useMarquee();
 
