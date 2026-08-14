@@ -7,4 +7,8 @@ export interface Tpl {
   nodes: TplNode[];
   edges: Array<[number, number, string]>;
   regions: Array<Omit<Region, 'id'>>;
+  /** Optional guided-playthrough steps, authored as `[nodeIndex, text]` tuples
+   *  (mirrors the `edges` index convention). Resolved to real node ids by
+   *  `templateToData`. Omit entirely for templates with no playthrough. */
+  walkthrough?: Array<[number, string]>;
 }
