@@ -249,6 +249,18 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
   display: flex; align-items: center; justify-content: center;
   border: 2px solid var(--bg);
 }
+.notes-badge {
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 18px; height: 18px;
+  border-radius: 9px;
+  background: var(--panel-2);
+  font-size: 10.5px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+  cursor: default;
+}
+.node.has-notes .box { border-color: var(--accent); }
 .node .label {
   font-size: 11.5px;
   text-align: center;
@@ -493,3 +505,17 @@ svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }
 .library-save-as { display: flex; gap: 8px; }
 .library-save-as input { flex: 1; }
 .library-save-as button:disabled { opacity: .5; cursor: default; }
+
+.notes-modal { width: 420px; }
+.notes-textarea {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+}

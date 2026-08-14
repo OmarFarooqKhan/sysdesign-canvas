@@ -60,4 +60,14 @@ describe('io', () => {
     const imported = parse(JSON.stringify(exported));
     expect(imported.nodes[0].db).toEqual(withDb.nodes.n1.db);
   });
+
+  it('round-trips a node with notes through export (toData) and import (parse)', () => {
+    const withNotes: GraphState = {
+      ...state,
+      nodes: { n1: { ...state.nodes.n1, notes: '~10k QPS, 500GB storage' } },
+    };
+    const exported = toData(withNotes, 'curved');
+    const imported = parse(JSON.stringify(exported));
+    expect(imported.nodes[0].notes).toBe('~10k QPS, 500GB storage');
+  });
 });

@@ -49,6 +49,18 @@ describe('graphReducer nodes', () => {
     expect(out.nodes.n1.db).toEqual(db);
     expect(s.nodes.n1.db).toBeUndefined();
   });
+  it('sets, updates, and clears node notes; ignores unknown ids', () => {
+    const s = base();
+    expect(graphReducer(s, { type: 'SET_NODE_NOTES', id: 'nope', notes: 'x' })).toBe(s);
+    const withNotes = graphReducer(s, { type: 'SET_NODE_NOTES', id: 'n1', notes: '~10k QPS' });
+    expect(withNotes.nodes.n1.notes).toBe('~10k QPS');
+    expect(s.nodes.n1.notes).toBeUndefined();
+    const updated = graphReducer(withNotes, { type: 'SET_NODE_NOTES', id: 'n1', notes: 'revised' });
+    expect(updated.nodes.n1.notes).toBe('revised');
+    const cleared = graphReducer(updated, { type: 'SET_NODE_NOTES', id: 'n1', notes: '' });
+    expect(cleared.nodes.n1.notes).toBeUndefined();
+    expect('notes' in cleared.nodes.n1).toBe(false);
+  });
   it('deletes a node and its edges, ignoring unknown ids', () => {
     const s: GraphState = { ...base(), edges: [{ id: 'e1', from: 'n1', to: 'n2', label: '' }] };
     expect(graphReducer(s, { type: 'DELETE_NODE', id: 'nope' })).toBe(s);

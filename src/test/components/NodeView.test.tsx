@@ -293,6 +293,86 @@ describe('NodeView', () => {
   });
 });
 
+describe('NodeView notes (C2)', () => {
+  it('has no has-notes class or badge when a node has no notes', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    expect(container.querySelector('[data-id="n1"]')).not.toHaveClass('has-notes');
+    expect(container.querySelector('[data-id="n1"] .notes-badge')).toBeNull();
+  });
+
+  it('shows the has-notes class, a badge, and a title tooltip once a node has notes', () => {
+    const initial = seed({
+      nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, notes: '~10k QPS, 500GB storage' } },
+    });
+    const { container } = renderNodes(initial);
+    const n2 = container.querySelector('[data-id="n2"]')!;
+    expect(n2).toHaveClass('has-notes');
+    const badge = n2.querySelector('.notes-badge')!;
+    expect(badge).toHaveTextContent('📝');
+    expect(badge).toHaveAttribute('title', '~10k QPS, 500GB storage');
+    expect(container.querySelector('[data-id="n1"]')).not.toHaveClass('has-notes');
+  });
+
+  it('right-click opens a context menu with a Notes entry and prevents the native menu', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    // fireEvent returns dispatchEvent's result: false means a handler called preventDefault().
+    const notCanceled = fireEvent.contextMenu(container.querySelector('[data-id="n1"]')!, { clientX: 50, clientY: 60 });
+    expect(notCanceled).toBe(false);
+    expect(document.querySelector('.ctx')).not.toBeNull();
+    expect(screen.getByText('✎ Notes…')).toBeInTheDocument();
+  });
+
+  it('portals the context menu onto document.body', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    fireEvent.contextMenu(container.querySelector('[data-id="n1"]')!, { clientX: 10, clientY: 10 });
+    const menu = document.querySelector('.ctx')!;
+    expect(menu.closest('.node')).toBeNull();
+    expect(menu.parentElement).toBe(document.body);
+  });
+
+  it('choosing "Notes…" from the context menu opens the notes editor, closing the menu', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    fireEvent.contextMenu(container.querySelector('[data-id="n1"]')!, { clientX: 10, clientY: 10 });
+    fireEvent.click(screen.getByText('✎ Notes…'));
+    expect(document.querySelector('.ctx')).toBeNull();
+    expect(document.querySelector('.notes-modal')).not.toBeNull();
+  });
+
+  it('the context-menu → NotesEditor → Save flow dispatches SET_NODE_NOTES with the typed text', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    const root = container.querySelector('[data-id="n1"]')!;
+    fireEvent.contextMenu(root, { clientX: 10, clientY: 10 });
+    fireEvent.click(screen.getByText('✎ Notes…'));
+    fireEvent.change(screen.getByLabelText('Node notes'), { target: { value: '~10k QPS' } });
+    fireEvent.click(screen.getByText('Save'));
+
+    expect(document.querySelector('.notes-modal')).toBeNull();
+    expect(probeState!.nodes.n1.notes).toBe('~10k QPS');
+
+    // Saving a blank textarea dispatches an empty string, which the reducer treats as "clear".
+    fireEvent.contextMenu(root, { clientX: 10, clientY: 10 });
+    fireEvent.click(screen.getByText('✎ Notes…'));
+    fireEvent.change(screen.getByLabelText('Node notes'), { target: { value: '' } });
+    fireEvent.click(screen.getByText('Save'));
+    expect(probeState!.nodes.n1.notes).toBeUndefined();
+  });
+
+  it('closes the context menu on an outside click without opening notes', () => {
+    const initial = seed();
+    const { container } = renderNodes(initial);
+    fireEvent.contextMenu(container.querySelector('[data-id="n1"]')!, { clientX: 10, clientY: 10 });
+    expect(document.querySelector('.ctx')).not.toBeNull();
+    fireEvent.click(document.body);
+    expect(document.querySelector('.ctx')).toBeNull();
+    expect(document.querySelector('.notes-modal')).toBeNull();
+  });
+});
+
 describe('NodeView snap-to-grid + alignment guides (B3)', () => {
   it('snaps to the nearest 8px grid position when no neighbor is nearby', () => {
     const initial = seed({ nodes: { ...seed().nodes, n2: { ...seed().nodes.n2, x: 2000, y: 2000 } } });

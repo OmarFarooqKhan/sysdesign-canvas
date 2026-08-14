@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type { GraphNode } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { useUI } from '../store/UIContext';
@@ -9,6 +10,8 @@ import { textOf } from '../lib/dom';
 import { Icon } from './Icon';
 import { LinkPreview } from './LinkPreview';
 import { Guides } from './Guides';
+import { ContextMenu } from './ContextMenu';
+import { NotesEditor } from './NotesEditor';
 import { DbInspector } from './db/DbInspector';
 import { dbTableCount, isDbNode } from './db/dbModel';
 
@@ -18,6 +21,8 @@ export function NodeView({ node }: { node: GraphNode }) {
   const labelRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState(false);
   const [dbOpen, setDbOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const { onMouseDown: dragNode, guides } = useNodeDrag(node);
   const { linking, tempLine, onPortMouseDown, onRootMouseUp } = useLinkDrag(node);
@@ -41,18 +46,31 @@ export function NodeView({ node }: { node: GraphNode }) {
     if (e.key === 'Enter') { e.preventDefault(); labelRef.current?.blur(); }
   };
 
+  const onNodeContextMenu = (e: ReactMouseEvent) => {
+    e.preventDefault();
+    setMenuPos({ x: e.clientX, y: e.clientY });
+  };
+
   const dbCount = dbTableCount(node);
   const cls = [
-    'node', selectedNodeIds.includes(node.id) && 'selected', linking && 'linking', dbCount > 0 && 'has-data',
+    'node', selectedNodeIds.includes(node.id) && 'selected', linking && 'linking',
+    dbCount > 0 && 'has-data', node.notes && 'has-notes',
   ].filter(Boolean).join(' ');
 
   return (
     <>
-      <div className={cls} data-id={node.id} style={{ left: node.x, top: node.y }} onMouseUp={onRootMouseUp}>
+      <div
+        className={cls}
+        data-id={node.id}
+        style={{ left: node.x, top: node.y }}
+        onMouseUp={onRootMouseUp}
+        onContextMenu={onNodeContextMenu}
+      >
         <div className="box" onMouseDown={onBoxMouseDown} onDoubleClick={onBoxDoubleClick}>
           <Icon name={node.icon} />
           <div className="port" onMouseDown={onPortMouseDown} />
           {dbCount > 0 && <span className="db-badge">{dbCount}</span>}
+          {node.notes && <span className="notes-badge" title={node.notes}>📝</span>}
         </div>
         <div
           ref={labelRef}
@@ -65,8 +83,18 @@ export function NodeView({ node }: { node: GraphNode }) {
         >{node.label}</div>
         {tempLine && <LinkPreview {...tempLine} />}
         {dbOpen && <DbInspector node={node} onClose={() => setDbOpen(false)} />}
+        {notesOpen && <NotesEditor node={node} onClose={() => setNotesOpen(false)} />}
       </div>
       {guides && <Guides guides={guides} />}
+      {menuPos && createPortal(
+        <ContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          onClose={() => setMenuPos(null)}
+          items={[{ label: '✎ Notes…', onClick: () => setNotesOpen(true) }]}
+        />,
+        document.body,
+      )}
     </>
   );
 }

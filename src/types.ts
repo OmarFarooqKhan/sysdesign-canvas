@@ -27,6 +27,8 @@ export interface GraphNode extends NodeDef {
   x: number;
   y: number;
   db?: { tables: DbTable[] };
+  /** Free-text back-of-envelope annotation (QPS, storage estimates, etc). */
+  notes?: string;
 }
 
 export interface Edge {

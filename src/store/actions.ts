@@ -8,6 +8,7 @@ export type GraphAction =
   | { type: 'MOVE_NODES'; moves: { id: string; x: number; y: number }[] }
   | { type: 'RENAME_NODE'; id: string; label: string }
   | { type: 'SET_NODE_DB'; id: string; db: NonNullable<GraphNode['db']> }
+  | { type: 'SET_NODE_NOTES'; id: string; notes: string }
   | { type: 'DELETE_NODE'; id: string }
   | { type: 'ADD_EDGE'; from: string; to: string; label?: string }
   | { type: 'LABEL_EDGE'; id: string; label: string }
