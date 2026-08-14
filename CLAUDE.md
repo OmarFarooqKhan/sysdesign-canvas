@@ -36,6 +36,18 @@ Guidance for Claude Code when working in this repository.
   *Before committing* below). Leave visual review of the running app to the
   human.
 
+## Feature requests → feature-writer agent
+
+Whenever the user asks for a **new feature, enhancement, or capability**
+("add X", "I want Y", "can we build Z"), invoke the `feature-writer` agent
+(`.claude/agents/feature-writer.md`; it runs on the Fable model) **before any
+implementation**. Pass it the user's request verbatim plus every constraint or
+design decision already agreed in the conversation. It writes a
+`task-<feature-name>.md` execution plan at the repo root, decomposed for
+multiple agents to execute in parallel where the work allows. Implementation
+starts only from that file, after the user has seen the plan. Bug fixes,
+refactors, and tweaks to existing behavior do not go through this agent.
+
 ## Architecture
 
 - **React 19 + Vite**, TypeScript, no other UI framework.
@@ -139,6 +151,9 @@ sysdesign-canvas/
 │       ├── hooks/*.test.tsx
 │       ├── lib/*.test.ts
 │       └── store/*.test.(ts|tsx)
+├── .claude/
+│   ├── agents/feature-writer.md # plans new features into task-<name>.md files (see Feature requests above)
+│   └── launch.json              # dev-server launch config for the in-app preview
 ├── .github/
 │   ├── dependabot.yml           # keeps npm + workflow actions current
 │   └── workflows/deploy.yml     # push to main → audit → test → build → deploy (GitHub Pages, no `any`-check gate)
