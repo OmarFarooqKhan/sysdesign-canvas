@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GraphProvider, useGraph } from './store/GraphContext';
 import { UIProvider, useUI } from './store/UIContext';
-import { ViewportProvider } from './store/ViewportContext';
+import { ViewportProvider, useViewport } from './store/ViewportContext';
 import { Toolbar } from './components/Toolbar';
 import { Palette } from './components/Palette';
 import { Canvas } from './components/Canvas';
@@ -32,6 +32,24 @@ function Autosave() {
   return null;
 }
 
+/** The app shell: carries the `presenting` class (drives the CSS that makes node/region/edge
+ *  pointer editing inert while presenting) and hides the palette while presenting. */
+function Shell() {
+  const { presenting } = useViewport();
+  return (
+    <div className={presenting ? 'app presenting' : 'app'}>
+      <Autosave />
+      <Toolbar />
+      <div className="layout">
+        <Palette presenting={presenting} />
+        <div className="canvas-wrap">
+          <Canvas />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   useAutoHideScrollbars();
   const [startup] = useState(resolveStartup);
@@ -44,16 +62,7 @@ export function App() {
     <GraphProvider initial={startup.state}>
       <UIProvider initialEdgeMode={startup.edgeMode}>
         <ViewportProvider>
-          <div className="app">
-            <Autosave />
-            <Toolbar />
-            <div className="layout">
-              <Palette />
-              <div className="canvas-wrap">
-                <Canvas />
-              </div>
-            </div>
-          </div>
+          <Shell />
         </ViewportProvider>
       </UIProvider>
     </GraphProvider>

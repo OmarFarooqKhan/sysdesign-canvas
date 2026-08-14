@@ -1,4 +1,5 @@
 import type { EdgeMode, GraphData, GraphState } from '../types';
+import { downloadBlob } from './dom';
 
 /** Snapshot the live graph into a serializable diagram. */
 export function toData(state: GraphState, edgeMode: EdgeMode): GraphData {
@@ -12,13 +13,7 @@ export function toData(state: GraphState, edgeMode: EdgeMode): GraphData {
 
 /** Trigger a browser download of the diagram as pretty JSON. */
 export function download(data: GraphData, filename = 'system-design.json'): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), filename);
 }
 
 /** Parse + validate a diagram file's text. Throws on malformed input.

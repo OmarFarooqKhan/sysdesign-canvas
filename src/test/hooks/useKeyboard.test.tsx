@@ -6,10 +6,10 @@ import { UIProvider, useUI } from '../../store/UIContext';
 import { useKeyboard } from '../../hooks/useKeyboard';
 
 /** Test-only harness exposing seed/select actions and live counts. */
-function Harness() {
+function Harness({ disabled = false }: { disabled?: boolean }) {
   const { state, dispatch } = useGraph();
   const { selectNode, selectNodes, selectedNodeIds, selectRegion, selectEdge } = useUI();
-  useKeyboard();
+  useKeyboard(disabled);
   const addNode = () => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'Server' }, x: 0, y: 0 });
   return (
     <div>
@@ -36,11 +36,11 @@ function Harness() {
   );
 }
 
-function renderHarness() {
+function renderHarness(disabled = false) {
   return render(
     <GraphProvider>
       <UIProvider>
-        <Harness />
+        <Harness disabled={disabled} />
       </UIProvider>
     </GraphProvider>,
   );
@@ -270,6 +270,30 @@ describe('useKeyboard arrow-key nudge (B2)', () => {
     await user.click(screen.getByText('select-node'));
     screen.getByTestId('editable').focus();
     fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
+  });
+});
+
+describe('useKeyboard disabled (presentation mode, D1)', () => {
+  it('suppresses Delete, nudge, and undo when disabled', async () => {
+    const user = userEvent.setup();
+    renderHarness(true);
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
+    fireEvent.keyDown(document, { key: 'Delete' });
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+    fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
+  });
+
+  it('a keyup while disabled does not end a session', async () => {
+    const user = userEvent.setup();
+    renderHarness(true);
+    await user.click(screen.getByText('add-node'));
+    await user.click(screen.getByText('select-node'));
+    fireEvent.keyUp(document, { key: 'ArrowRight' });
     expect(screen.getByTestId('n1-x')).toHaveTextContent('0');
   });
 });

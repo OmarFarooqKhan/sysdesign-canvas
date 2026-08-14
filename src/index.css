@@ -144,6 +144,10 @@ header .group-start { margin-left: 4px; padding-left: 14px; border-left: 1px sol
 .canvas.pan-mode { cursor: grab; }
 .canvas.pan-mode:active { cursor: grabbing; }
 .canvas-inner { position: absolute; inset: 0; }
+/* Presenting: the whole editable layer (nodes/regions/edges/ports/handles) goes inert to the
+   pointer in one shot; pan/zoom/Fit live outside .canvas-inner (canvas root, ZoomControls) and
+   keep working. */
+.app.presenting .canvas-inner { pointer-events: none; }
 svg.edges { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 svg.edges path.edge { pointer-events: stroke; cursor: pointer; }
 svg.edges path.edge-hit { pointer-events: stroke; cursor: pointer; }

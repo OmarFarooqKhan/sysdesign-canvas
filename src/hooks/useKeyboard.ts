@@ -13,13 +13,16 @@ const ARROW_DELTAS: Record<string, [number, number]> = {
 /** Global shortcuts: Delete/Backspace removes the selection, Cmd/Ctrl+Z undoes, redo variants
  *  redo, and arrow keys nudge the current node selection (or a lone selected region) by 1px
  *  (8px with Shift) via the MOVE_NODES/MOVE_REGION session actions — END_SESSION fires on
- *  keyup so holding a key coalesces into one undo entry per press-and-hold. */
-export function useKeyboard() {
+ *  keyup so holding a key coalesces into one undo entry per press-and-hold. `disabled` (e.g.
+ *  presentation mode) suppresses every shortcut; optional and additive so existing callers are
+ *  unaffected. */
+export function useKeyboard(disabled = false) {
   const { state, dispatch } = useGraph();
   const { selectedNodeIds, selectedRegionId, selectedEdgeId, clearSelection } = useUI();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (disabled) return;
       // Skip while editing a label/title (contenteditable reflects reliably in jsdom too).
       if ((document.activeElement as Element).getAttribute('contenteditable') === 'true') return;
 
@@ -65,7 +68,7 @@ export function useKeyboard() {
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      if (ARROW_DELTAS[e.key]) dispatch({ type: 'END_SESSION' });
+      if (!disabled && ARROW_DELTAS[e.key]) dispatch({ type: 'END_SESSION' });
     };
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
@@ -73,5 +76,5 @@ export function useKeyboard() {
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [dispatch, state, selectedNodeIds, selectedRegionId, selectedEdgeId, clearSelection]);
+  }, [dispatch, state, selectedNodeIds, selectedRegionId, selectedEdgeId, clearSelection, disabled]);
 }

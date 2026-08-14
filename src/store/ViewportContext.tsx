@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { clampZoom, stepZoom } from '../lib/viewport';
 import type { Viewport } from '../lib/viewport';
@@ -6,6 +6,8 @@ import type { Viewport } from '../lib/viewport';
 /** Non-undoable, non-serialized camera state: zoom/pan + the pan-tool toggle. */
 export interface ViewportContextValue extends Viewport {
   panMode: boolean;
+  /** Read-only walkthrough mode: editing is inert, palette hidden; pan/zoom/Fit still work. */
+  presenting: boolean;
   /** The canvas's root element, so consumers can compute screen->canvas conversions. */
   canvasRef: RefObject<HTMLDivElement | null>;
   zoomIn: () => void;
@@ -13,6 +15,7 @@ export interface ViewportContextValue extends Viewport {
   setViewport: (v: Partial<Viewport>) => void;
   panBy: (dx: number, dy: number) => void;
   togglePanMode: () => void;
+  togglePresenting: () => void;
 }
 
 const Ctx = createContext<ViewportContextValue | null>(null);
@@ -22,6 +25,7 @@ export function ViewportProvider({ children }: { children: ReactNode }) {
   const [panX, setPanX] = useState(0);
   const [panY, setPanY] = useState(0);
   const [panMode, setPanMode] = useState(false);
+  const [presenting, setPresenting] = useState(false);
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
   const zoomIn = useCallback(() => setZoom((z) => stepZoom(z, 1)), []);
@@ -36,10 +40,19 @@ export function ViewportProvider({ children }: { children: ReactNode }) {
     setPanY((y) => y + dy);
   }, []);
   const togglePanMode = useCallback(() => setPanMode((m) => !m), []);
+  const togglePresenting = useCallback(() => setPresenting((p) => !p), []);
+
+  // Escape exits presentation mode; only listens while presenting is active.
+  useEffect(() => {
+    if (!presenting) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPresenting(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [presenting]);
 
   const value: ViewportContextValue = {
-    zoom, panX, panY, panMode, canvasRef,
-    zoomIn, zoomOut, setViewport, panBy, togglePanMode,
+    zoom, panX, panY, panMode, presenting, canvasRef,
+    zoomIn, zoomOut, setViewport, panBy, togglePanMode, togglePresenting,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

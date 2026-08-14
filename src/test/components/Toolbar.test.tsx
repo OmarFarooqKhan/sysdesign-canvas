@@ -9,6 +9,8 @@ import { Toolbar } from '../../components/Toolbar';
 
 const { exportPngMock } = vi.hoisted(() => ({ exportPngMock: vi.fn() }));
 vi.mock('../../lib/exportPng', () => ({ exportPng: exportPngMock }));
+const { downloadSvgMock } = vi.hoisted(() => ({ downloadSvgMock: vi.fn() }));
+vi.mock('../../lib/exportSvg', () => ({ downloadSvg: downloadSvgMock }));
 
 /** Test-only harness: exposes a seed action + live node count alongside the Toolbar. */
 function Harness({ withCanvasRef = true }: { withCanvasRef?: boolean }) {
@@ -52,6 +54,7 @@ describe('Toolbar', () => {
 
   beforeEach(() => {
     exportPngMock.mockClear();
+    downloadSvgMock.mockClear();
     confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     (URL as unknown as { createObjectURL: typeof URL.createObjectURL }).createObjectURL = vi.fn(() => 'blob:mock');
     (URL as unknown as { revokeObjectURL: typeof URL.revokeObjectURL }).revokeObjectURL = vi.fn();
@@ -153,6 +156,16 @@ describe('Toolbar', () => {
     await user.selectOptions(select, 'png');
     expect(exportPngMock).toHaveBeenCalledTimes(1);
     expect(exportPngMock.mock.calls[0][1]).toBe(screen.getByTestId('canvas-rect'));
+    expect((select as HTMLSelectElement).value).toBe('');
+  });
+
+  it('export select: "as SVG" calls downloadSvg with the current state and edge mode', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    const select = screen.getByRole('combobox', { name: 'Export' });
+    await user.selectOptions(select, 'svg');
+    expect(downloadSvgMock).toHaveBeenCalledTimes(1);
+    expect(downloadSvgMock.mock.calls[0][1]).toBe('curved');
     expect((select as HTMLSelectElement).value).toBe('');
   });
 
@@ -279,5 +292,29 @@ describe('Toolbar', () => {
     await user.click(panBtn);
     expect(panBtn).toHaveAttribute('aria-pressed', 'false');
     expect(panBtn).not.toHaveClass('active');
+  });
+
+  it('Present toggle flips aria-pressed/active and disables editing controls, leaving Fit/Pan/Export live (D1)', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    const presentBtn = screen.getByRole('button', { name: '▶ Present' });
+    expect(presentBtn).toHaveAttribute('aria-pressed', 'false');
+
+    await user.click(presentBtn);
+    expect(presentBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(presentBtn).toHaveClass('active');
+    expect(screen.getByRole('combobox', { name: 'Templates' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '+ Region' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Edges:/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Diagrams…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '⤢ Fit' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: '✋ Pan' })).not.toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Export' })).not.toBeDisabled();
+
+    await user.click(presentBtn);
+    expect(presentBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Clear' })).not.toBeDisabled();
   });
 });

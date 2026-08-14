@@ -44,4 +44,9 @@ describe('Palette', () => {
     expect(screen.getByText('Components')).toBeInTheDocument();
     expect(screen.getByText(firstGroup)).toBeInTheDocument();
   });
+
+  it('renders nothing while presenting (D1)', () => {
+    const { container } = render(<Palette presenting />);
+    expect(container).toBeEmptyDOMElement();
+  });
 });

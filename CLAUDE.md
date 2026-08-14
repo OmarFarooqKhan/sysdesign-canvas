@@ -57,23 +57,31 @@ Verified against the working tree; keep this in sync when files move.
 ```
 sysdesign-canvas/
 ├── src/
-│   ├── main.tsx              # Vite entry point, mounts <App>
-│   ├── App.tsx                # top-level layout, wires providers + Canvas
+│   ├── main.tsx              # Vite entry point, mounts <App> (in <StrictMode>)
+│   ├── App.tsx                # top-level layout: providers, startup load, Shell (presenting class)
 │   ├── types.ts                # shared domain types (GraphState, GraphNode, Edge, DbTable, ...)
 │   ├── vite-env.d.ts
 │   ├── index.css               # global styles
 │   ├── components/
+│   │   ├── AlertDialog.tsx      # generic confirm/dismiss modal (Escape closes)
 │   │   ├── Canvas.tsx           # main drop/drag surface (integration glue, untested directly)
-│   │   ├── ContextMenu.tsx
+│   │   ├── ContextMenu.tsx      # generic right-click menu, closes on outside click
 │   │   ├── EdgeLayer.tsx        # renders all edges + handles edge interactions
 │   │   ├── EdgeView.tsx         # single edge (path + arrowhead + drag-to-bend)
 │   │   ├── EmptyState.tsx
+│   │   ├── Guides.tsx           # alignment-guide lines for an in-progress node drag
 │   │   ├── Icon.tsx
+│   │   ├── LibraryButton.tsx    # toolbar entry point for the named diagram library
+│   │   ├── LibraryDialog.tsx    # named save/load/delete modal
+│   │   ├── LibraryRow.tsx       # one row of LibraryDialog's save list
 │   │   ├── LinkPreview.tsx      # in-progress link-drag preview arrow
 │   │   ├── Marquee.tsx          # drag-to-select rectangle (+ useMarquee hook)
 │   │   ├── NodeView.tsx
-│   │   ├── Palette.tsx          # draggable component palette sidebar
+│   │   ├── NotesEditor.tsx      # per-node free-text notes modal
+│   │   ├── Palette.tsx          # draggable component palette sidebar; hidden while presenting
+│   │   ├── PresentButton.tsx    # toolbar toggle for presentation mode
 │   │   ├── RegionView.tsx
+│   │   ├── ShareButton.tsx      # toolbar entry point for shareable links
 │   │   ├── Toolbar.tsx
 │   │   ├── ZoomControls.tsx     # floating zoom cluster (bottom-right of the canvas)
 │   │   └── db/                  # SQL DB node schema editor (opened via node double-click)
@@ -83,29 +91,45 @@ sysdesign-canvas/
 │   │       ├── TableEditor.tsx
 │   │       └── dbModel.ts          # pure table/column CRUD helpers, isDbNode, dbTableCount
 │   ├── data/
-│   │   ├── icons.ts              # icon set for palette/nodes
+│   │   ├── icons.ts              # icon set for palette/nodes (inline <svg> strings)
 │   │   ├── palette.ts             # palette entries (component types)
-│   │   └── templates.ts            # starter graph templates
+│   │   └── templates/              # starter graph templates, one small file per template
+│   │       ├── index.ts              # assembles TEMPLATES/TEMPLATE_OPTIONS/templateToData
+│   │       ├── types.ts               # shared Tpl/TplNode shapes
+│   │       └── chat.ts, feed.ts, url.ts, rateLimiter.ts, rideSharing.ts, videoStreaming.ts, notificationSystem.ts
 │   ├── hooks/
-│   │   ├── useKeyboard.ts          # undo/redo/delete (incl. group delete) shortcuts
-│   │   ├── useLinkDrag.ts           # port-to-port edge-creation drag, per NodeView
-│   │   ├── useNodeDrag.ts            # node drag, incl. group move for a multi-selection
-│   │   └── usePointerDrag.ts          # shared pointer drag/resize/session logic
+│   │   ├── useAutoHideScrollbars.ts   # theme scrollbars that fade out after idle
+│   │   ├── useAutosave.ts              # debounced localStorage autosave of graph state
+│   │   ├── useClipboardKeys.ts          # mod+C/V/D copy/paste/duplicate shortcuts
+│   │   ├── useKeyboard.ts                # undo/redo/delete/nudge shortcuts
+│   │   ├── useLinkDrag.ts                 # port-to-port edge-creation drag, per NodeView
+│   │   ├── useNodeDrag.ts                  # node drag incl. group move + snap-to-grid/guides
+│   │   └── usePointerDrag.ts                # shared pointer drag/resize/session logic
 │   ├── lib/
-│   │   ├── dom.ts                    # small DOM helpers
-│   │   ├── edgeBend.ts                # edge midpoint/bend-delta helpers for drag-to-bend
-│   │   ├── exportPng.ts                # rasterize .canvas-inner to a content-bounded PNG (html-to-image)
-│   │   ├── geometry.ts                 # node/edge coordinate math (anchors, insets, paths)
-│   │   ├── io.ts                        # JSON export/import (download/parse/toData)
-│   │   ├── selection.ts                  # rect math + node snapshot helpers (marquee, group move)
-│   │   └── viewport.ts                    # zoom clamp/step, coordinate conversion, fit-to-view
+│   │   ├── clipboard.ts                # copy/paste snapshot + paste-offset helpers
+│   │   ├── dom.ts                       # small DOM helpers (textOf, downloadBlob)
+│   │   ├── edgeBend.ts                   # edge midpoint/bend-delta helpers for drag-to-bend
+│   │   ├── edgePath.ts                    # SVG path string for an edge (curved/ortho)
+│   │   ├── exportPng.ts                    # rasterize .canvas-inner to a content-bounded PNG
+│   │   ├── exportSvg.ts                     # buildSvg/downloadSvg: state -> standalone .svg
+│   │   ├── geometry.ts                       # node/edge coordinate math (anchors, insets)
+│   │   ├── io.ts                              # JSON export/import (download/parse/toData)
+│   │   ├── library.ts                          # named diagram CRUD over localStorage
+│   │   ├── persist.ts                           # autosave load/save over localStorage
+│   │   ├── reciprocalBend.ts                     # default bend for reciprocal edge pairs
+│   │   ├── selection.ts                           # rect math + node snapshot helpers
+│   │   ├── shareUrl.ts                             # encode/decode a diagram into a URL hash
+│   │   ├── snap.ts                                  # grid + alignment-guide snapping
+│   │   ├── svgParts.ts                               # per-element SVG string builders for exportSvg
+│   │   └── viewport.ts                                # zoom clamp/step, coords, fit-to-view, contentBounds
 │   ├── store/
 │   │   ├── GraphContext.tsx            # undoable graph state provider
-│   │   ├── UIContext.tsx                # non-undoable UI state (selection incl. multi-select)
-│   │   ├── ViewportContext.tsx           # non-undoable, non-serialized zoom/pan/pan-mode state
-│   │   ├── actions.ts                    # graph action creators + helpers
-│   │   ├── graphReducer.ts                # pure reducer for graph actions
-│   │   └── history.ts                      # generic useReducer undo/redo wrapper
+│   │   ├── UIContext.tsx                # non-undoable UI state (selection, edge mode, clipboard)
+│   │   ├── ViewportContext.tsx           # non-undoable, non-serialized zoom/pan/pan-mode/presenting
+│   │   ├── actions.ts                     # graph action creators + helpers
+│   │   ├── graphReducer.ts                 # pure reducer for graph actions, delegates node cases
+│   │   ├── history.ts                       # generic useReducer undo/redo wrapper
+│   │   └── nodeReducer.ts                    # node-shaped graph action cases (split out of graphReducer)
 │   └── test/                                # ALL tests live here, mirroring src/ subfolders
 │       ├── setup.ts                          # RTL/jest-dom setup (wired via vitest.config.ts)
 │       ├── components/*.test.tsx (+ db/*.test.tsx)

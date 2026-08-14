@@ -5,7 +5,7 @@ import { GraphProvider, useGraph } from '../../store/GraphContext';
 import { UIProvider, useUI } from '../../store/UIContext';
 import { LibraryButton } from '../../components/LibraryButton';
 
-function Harness() {
+function Harness({ disabled }: { disabled?: boolean }) {
   const { state, dispatch } = useGraph();
   const { edgeMode, setEdgeMode } = useUI();
   return (
@@ -17,12 +17,13 @@ function Harness() {
       </button>
       <button onClick={() => dispatch({ type: 'CLEAR' })}>clear</button>
       <button onClick={() => setEdgeMode('ortho')}>set-ortho</button>
-      <LibraryButton />
+      <LibraryButton disabled={disabled} />
     </>
   );
 }
 
-const renderHarness = () => render(<GraphProvider><UIProvider><Harness /></UIProvider></GraphProvider>);
+const renderHarness = (disabled?: boolean) =>
+  render(<GraphProvider><UIProvider><Harness disabled={disabled} /></UIProvider></GraphProvider>);
 
 beforeEach(() => localStorage.clear());
 
@@ -61,5 +62,10 @@ describe('LibraryButton', () => {
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
     expect(screen.getByTestId('edge-mode')).toHaveTextContent('ortho');
     expect(screen.queryByText('Diagrams')).not.toBeInTheDocument();
+  });
+
+  it('is disabled when the disabled prop is set (D1 presentation mode)', () => {
+    renderHarness(true);
+    expect(screen.getByRole('button', { name: 'Diagrams…' })).toBeDisabled();
   });
 });

@@ -5,10 +5,10 @@ import { UIProvider, useUI } from '../../store/UIContext';
 import { useClipboardKeys } from '../../hooks/useClipboardKeys';
 
 /** Test-only harness exposing seed/select actions and live counts. */
-function Harness() {
+function Harness({ disabled = false }: { disabled?: boolean }) {
   const { state, dispatch } = useGraph();
   const { selectNode, selectNodes, clipboard } = useUI();
-  useClipboardKeys();
+  useClipboardKeys(disabled);
   const addNode = () => dispatch({ type: 'ADD_NODE', def: { key: 'server', icon: 'server', label: 'S' }, x: 10, y: 10 });
   const addEdge = () => dispatch({ type: 'ADD_EDGE', from: 'n1', to: 'n2' });
   return (
@@ -27,11 +27,11 @@ function Harness() {
   );
 }
 
-function renderHarness() {
+function renderHarness(disabled = false) {
   return render(
     <GraphProvider>
       <UIProvider>
-        <Harness />
+        <Harness disabled={disabled} />
       </UIProvider>
     </GraphProvider>,
   );
@@ -117,5 +117,15 @@ describe('useClipboardKeys', () => {
     renderHarness();
     fireEvent.keyDown(document, { key: 'x', ctrlKey: true });
     expect(screen.getByTestId('node-count')).toHaveTextContent('0');
+  });
+
+  it('suppresses copy/paste/duplicate when disabled (presentation mode, D1)', () => {
+    renderHarness(true);
+    fireEvent.click(screen.getByText('add-node'));
+    fireEvent.click(screen.getByText('sel-n1'));
+    fireEvent.keyDown(document, { key: 'c', ctrlKey: true });
+    expect(screen.getByTestId('clip-count')).toHaveTextContent('-');
+    fireEvent.keyDown(document, { key: 'd', ctrlKey: true });
+    expect(screen.getByTestId('node-count')).toHaveTextContent('1');
   });
 });

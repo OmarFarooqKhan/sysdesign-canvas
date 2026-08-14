@@ -17,14 +17,15 @@ import { Marquee, useMarquee } from './Marquee';
 /** The diagram surface: drop target for new nodes, hosts edges/regions/nodes. */
 export function Canvas() {
   const { state, dispatch } = useGraph();
-  const { zoom, panX, panY, panMode, canvasRef, setViewport } = useViewport();
-  useKeyboard();
-  useClipboardKeys();
+  const { zoom, panX, panY, panMode, presenting, canvasRef, setViewport } = useViewport();
+  useKeyboard(presenting);
+  useClipboardKeys(presenting);
   const panStart = useRef({ x: 0, y: 0 });
   const { onMouseDown: startMarquee, rect: marqueeRect } = useMarquee();
 
   const onDrop = (e: ReactDragEvent) => {
     e.preventDefault();
+    if (presenting) return;
     const raw = e.dataTransfer.getData('text/plain');
     if (!raw) return;
     const def = JSON.parse(raw) as NodeDef;
@@ -48,6 +49,7 @@ export function Canvas() {
   const onCaptureClick = (e: ReactMouseEvent) => { if (panMode) e.stopPropagation(); };
 
   const onMouseDown = (e: ReactMouseEvent) => {
+    if (presenting) return;
     const target = e.target as HTMLElement;
     if (target === e.currentTarget || target.classList.contains('canvas-inner')) startMarquee(e);
   };

@@ -2,9 +2,11 @@ import { Fragment, useState } from 'react';
 import { PALETTE } from '../data/palette';
 import { Icon } from './Icon';
 
-/** Left sidebar: draggable node-type palette, grouped by section. Collapsible. */
-export function Palette() {
+/** Left sidebar: draggable node-type palette, grouped by section. Collapsible; hidden entirely
+ *  while presenting (`presenting` is optional/additive so existing callers are unaffected). */
+export function Palette({ presenting = false }: { presenting?: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
+  if (presenting) return null;
 
   return (
     <aside className={collapsed ? 'palette collapsed' : 'palette'}>
