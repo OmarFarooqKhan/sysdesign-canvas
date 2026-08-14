@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampZoom, stepZoom, screenToCanvas, screenToLocal, contentBounds, fitTransform,
-  ZOOM_MIN, ZOOM_MAX,
+  fitContent, nodeVisible, ZOOM_MIN, ZOOM_MAX,
 } from '../../lib/viewport';
 import type { GraphState } from '../../types';
 
@@ -71,5 +71,72 @@ describe('fitTransform', () => {
     const bounds = { minX: 0, minY: 0, maxX: 100000, maxY: 100000 };
     const vp = fitTransform(bounds, 800, 600);
     expect(vp.zoom).toBe(ZOOM_MIN);
+  });
+});
+
+const seededState: GraphState = {
+  nodes: {
+    n1: { id: 'n1', key: 'k', icon: 'i', label: 'l', x: 10, y: 20 },
+    n2: { id: 'n2', key: 'k', icon: 'i', label: 'l', x: 300, y: 150 },
+  },
+  edges: [],
+  regions: [],
+  seq: 2,
+};
+
+describe('fitContent', () => {
+  it('returns null for an empty state', () => {
+    expect(fitContent(emptyState, 800, 600)).toBeNull();
+  });
+
+  it('fits the content bounds into the full viewport with no inset', () => {
+    expect(fitContent(seededState, 800, 600)).toEqual(fitTransform(contentBounds(seededState)!, 800, 600));
+  });
+
+  it('fits into the reduced width when an inset is given', () => {
+    expect(fitContent(seededState, 800, 600, 256)).toEqual(fitTransform(contentBounds(seededState)!, 800 - 256, 600));
+  });
+});
+
+describe('nodeVisible', () => {
+  const vp = { zoom: 1, panX: 0, panY: 0 };
+  const node = { x: 100, y: 100 };
+
+  it('is true when the node sits fully inside the viewport', () => {
+    expect(nodeVisible(vp, 800, 600, node, 0)).toBe(true);
+  });
+
+  it('is false when the node crosses the left boundary', () => {
+    expect(nodeVisible(vp, 800, 600, { x: -1, y: 100 }, 0)).toBe(false);
+  });
+
+  it('is false when the node crosses the top boundary', () => {
+    expect(nodeVisible(vp, 800, 600, { x: 100, y: -1 }, 0)).toBe(false);
+  });
+
+  it('is false when the node crosses the right boundary', () => {
+    // node right edge = 100 + 96 = 196; viewportW = 196 puts it exactly at the edge (visible),
+    // 195 pushes it 1px over.
+    expect(nodeVisible(vp, 195, 600, node, 0)).toBe(false);
+    expect(nodeVisible(vp, 196, 600, node, 0)).toBe(true);
+  });
+
+  it('is false when the node crosses the bottom boundary', () => {
+    // node bottom edge = 100 + 64 = 164.
+    expect(nodeVisible(vp, 800, 163, node, 0)).toBe(false);
+    expect(nodeVisible(vp, 800, 164, node, 0)).toBe(true);
+  });
+
+  it('scales the node rect by zoom before checking bounds', () => {
+    const zoomed = { zoom: 2, panX: 0, panY: 0 };
+    // at zoom 2, right edge = 100*2 + 96*2 = 392; fits in 400 but not 391.
+    expect(nodeVisible(zoomed, 400, 600, node, 0)).toBe(true);
+    expect(nodeVisible(zoomed, 391, 600, node, 0)).toBe(false);
+  });
+
+  it('respects rightInset on the right boundary', () => {
+    // node right edge = 196; with a 200px inset the usable width is 396, well clear at 800.
+    expect(nodeVisible(vp, 800, 600, node, 604)).toBe(true);
+    expect(nodeVisible(vp, 800, 600, node, 605)).toBe(false);
   });
 });

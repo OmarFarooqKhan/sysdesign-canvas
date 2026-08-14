@@ -5,6 +5,9 @@ import { UIProvider } from '../../store/UIContext';
 import { ViewportProvider, useViewport } from '../../store/ViewportContext';
 import { PlaythroughProvider, usePlaythrough } from '../../store/PlaythroughContext';
 import { usePlaythroughCamera } from '../../hooks/usePlaythroughCamera';
+import { fitContent } from '../../lib/viewport';
+import { panToStep } from '../../lib/playthrough';
+import { nodeCenter } from '../../lib/geometry';
 import type { GraphState, WalkStep } from '../../types';
 
 const steps: WalkStep[] = [{ nodeId: 'n1', text: 'a' }, { nodeId: 'n2', text: 'b' }];
@@ -18,6 +21,20 @@ const seed = (walkthrough: WalkStep[] = steps): GraphState => ({
   regions: [],
   seq: 2,
   walkthrough,
+});
+
+/** Nodes far enough apart that the entry fit clamps at ZOOM_MIN and content overflows
+ *  the panel-adjusted viewport, so step 0 lands off-view after the raw fit and both the
+ *  entry-time and per-step visibility panning kick in. */
+const giantSeed = (): GraphState => ({
+  nodes: {
+    n1: { id: 'n1', key: 'server', icon: 'server', label: 'API', x: 0, y: 100 },
+    n2: { id: 'n2', key: 'sql', icon: 'sql', label: 'DB', x: 4000, y: 100 },
+  },
+  edges: [],
+  regions: [],
+  seq: 2,
+  walkthrough: steps,
 });
 
 function CameraHost() {
@@ -73,36 +90,57 @@ function setup(initial: GraphState = seed(), withCanvas = true) {
 }
 
 const viewport = () => screen.getByTestId('viewport').textContent;
+// Panel inset: 228px panel + 2x14px margins.
+const INSET = 256;
 
 afterEach(() => vi.restoreAllMocks());
 
-// The visible area left of the 228px panel + its 2x14px margins in an 800px-wide
-// canvas centers on x = (800 - 256) / 2 = 272; vertical center is 300.
-// n1's center is (148, 132), n2's is (348, 132).
 describe('usePlaythroughCamera', () => {
   it('does nothing while not playing', () => {
     setup();
     expect(viewport()).toBe('1,0,0');
   });
 
-  it('pans the step-0 node into the area left of the panel on start, leaving zoom alone', () => {
+  it('fits the whole diagram into the area left of the panel on start', () => {
     setup();
     fireEvent.click(screen.getByText('walk-start'));
-    expect(viewport()).toBe(`1,${272 - 148},${300 - 132}`);
+    const fit = fitContent(seed(), 800, 600, INSET)!;
+    expect(viewport()).toBe(`${fit.zoom},${fit.panX},${fit.panY}`);
   });
 
-  it('pans again on every step change', () => {
-    setup();
-    fireEvent.click(screen.getByText('walk-start'));
-    fireEvent.click(screen.getByText('walk-next'));
-    expect(viewport()).toBe(`1,${272 - 348},${300 - 132}`);
-  });
-
-  it('accounts for the current zoom when panning', () => {
+  it('entry fit overrides a prior zoom/pan', () => {
     setup();
     fireEvent.click(screen.getByText('set-viewport'));
     fireEvent.click(screen.getByText('walk-start'));
-    expect(viewport()).toBe(`1.5,${272 - 148 * 1.5},${300 - 132 * 1.5}`);
+    const fit = fitContent(seed(), 800, 600, INSET)!;
+    expect(viewport()).toBe(`${fit.zoom},${fit.panX},${fit.panY}`);
+  });
+
+  it('holds the camera on step change when the next node is already visible at the fit', () => {
+    setup();
+    fireEvent.click(screen.getByText('walk-start'));
+    const fit = fitContent(seed(), 800, 600, INSET)!;
+    fireEvent.click(screen.getByText('walk-next'));
+    expect(viewport()).toBe(`${fit.zoom},${fit.panX},${fit.panY}`);
+  });
+
+  it('pans an off-view node into view on step change, holding the clamped zoom', () => {
+    setup(giantSeed());
+    fireEvent.click(screen.getByText('walk-start'));
+    const fit = fitContent(giantSeed(), 800, 600, INSET)!;
+    fireEvent.click(screen.getByText('walk-next'));
+    const n2 = giantSeed().nodes.n2;
+    const expected = panToStep(fit, 800, 600, nodeCenter(n2), INSET);
+    expect(viewport()).toBe(`${fit.zoom},${expected.panX},${expected.panY}`);
+  });
+
+  it('entry on an oversized diagram still lands with step 0 visible', () => {
+    setup(giantSeed());
+    fireEvent.click(screen.getByText('walk-start'));
+    const fit = fitContent(giantSeed(), 800, 600, INSET)!;
+    const n1 = giantSeed().nodes.n1;
+    const expected = panToStep(fit, 800, 600, nodeCenter(n1), INSET);
+    expect(viewport()).toBe(`${fit.zoom},${expected.panX},${expected.panY}`);
   });
 
   it('restores the pre-playthrough viewport on stop', () => {

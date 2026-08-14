@@ -4,16 +4,19 @@ import { useViewport } from '../store/ViewportContext';
 import { usePlaythrough } from '../store/PlaythroughContext';
 import { nodeCenter } from '../lib/geometry';
 import { PANEL_W, clampStep, panToStep, resolveSteps } from '../lib/playthrough';
+import { fitContent, nodeVisible } from '../lib/viewport';
 import type { Viewport } from '../lib/viewport';
 
 /** The panel's 14px inset on both sides, added to PANEL_W for the viewport area
  *  reserved on the right while playing. */
 const PANEL_MARGINS = 28;
 
-/** Camera follow for the playthrough: entering remembers the viewport, every step
- *  change pans the active node into the visible area left of the panel (zoom is
- *  left alone), and exiting restores the remembered pre-playthrough viewport.
- *  Smoothness is CSS (.app.playing .canvas-inner transition). */
+/** Camera follow for the playthrough: entering remembers the viewport, then fits the
+ *  whole diagram into the area left of the panel (panning into view too, if the fit
+ *  still leaves the active node hidden on an oversized diagram). After that, a step
+ *  change only pans when the new active node isn't fully visible — otherwise the
+ *  camera holds the fit framing. Exiting restores the remembered pre-playthrough
+ *  viewport. Smoothness is CSS (.app.playing .canvas-inner transition). */
 export function usePlaythroughCamera(): void {
   const { state } = useGraph();
   const { playing, stepIndex } = usePlaythrough();
@@ -24,6 +27,9 @@ export function usePlaythroughCamera(): void {
   const saved = useRef<Viewport | null>(null);
   const live = useRef({ state, zoom, panX, panY });
   live.current = { state, zoom, panX, panY };
+
+  // Whether the entry fit has already run for the current playing session.
+  const entered = useRef(false);
 
   useEffect(() => {
     if (playing) {
@@ -38,12 +44,31 @@ export function usePlaythroughCamera(): void {
   }, [playing, setViewport]);
 
   useEffect(() => {
-    if (!playing) return;
-    const { state, zoom, panX, panY } = live.current;
+    if (!playing) { entered.current = false; return; }
+    const { state } = live.current;
     const resolved = resolveSteps(state);
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!resolved.length || !rect) return;
     const node = resolved[clampStep(stepIndex, resolved.length)].node;
-    setViewport(panToStep({ zoom, panX, panY }, rect.width, rect.height, nodeCenter(node), PANEL_W + PANEL_MARGINS));
+    const inset = PANEL_W + PANEL_MARGINS;
+    const center = nodeCenter(node);
+
+    if (!entered.current) {
+      entered.current = true;
+      // Non-null: `resolved.length` above guarantees state.nodes has at least one
+      // entry, so contentBounds — and therefore fitContent — can never be null here.
+      const fit = fitContent(state, rect.width, rect.height, inset)!;
+      setViewport(fit);
+      if (!nodeVisible(fit, rect.width, rect.height, node, inset)) {
+        setViewport(panToStep(fit, rect.width, rect.height, center, inset));
+      }
+      return;
+    }
+
+    const { zoom, panX, panY } = live.current;
+    const vp = { zoom, panX, panY };
+    if (!nodeVisible(vp, rect.width, rect.height, node, inset)) {
+      setViewport(panToStep(vp, rect.width, rect.height, center, inset));
+    }
   }, [playing, stepIndex, canvasRef, setViewport]);
 }

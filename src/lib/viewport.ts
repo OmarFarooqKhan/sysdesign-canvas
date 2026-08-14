@@ -61,3 +61,26 @@ export function fitTransform(bounds: Bounds, viewportW: number, viewportH: numbe
     panY: (viewportH - h * zoom) / 2 - bounds.minY * zoom,
   };
 }
+
+/** Zoom/pan that fits all of `state`'s content into a viewport, reserving `rightInset`
+ *  px on the right (e.g. for the playthrough panel). `null` on an empty canvas — callers
+ *  should leave the current viewport alone in that case. */
+export function fitContent(
+  state: GraphState, viewportW: number, viewportH: number, rightInset = 0,
+): Viewport | null {
+  const bounds = contentBounds(state);
+  if (!bounds) return null;
+  return fitTransform(bounds, viewportW - rightInset, viewportH);
+}
+
+/** Whether `node` sits fully inside the visible viewport area (left of `rightInset` px
+ *  reserved on the right) at the given zoom/pan. Strict containment, no margin. */
+export function nodeVisible(
+  vp: Viewport, viewportW: number, viewportH: number, node: { x: number; y: number }, rightInset: number,
+): boolean {
+  const left = node.x * vp.zoom + vp.panX;
+  const top = node.y * vp.zoom + vp.panY;
+  const right = left + NODE_W * vp.zoom;
+  const bottom = top + NODE_H * vp.zoom;
+  return left >= 0 && top >= 0 && right <= viewportW - rightInset && bottom <= viewportH;
+}

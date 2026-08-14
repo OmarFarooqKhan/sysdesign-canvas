@@ -9,6 +9,7 @@ import { Canvas } from './components/Canvas';
 import { PlaythroughPanel } from './components/PlaythroughPanel';
 import { useAutoHideScrollbars } from './hooks/useAutoHideScrollbars';
 import { useAutosave } from './hooks/useAutosave';
+import { usePresentFit } from './hooks/usePresentFit';
 import { fromData } from './store/actions';
 import { loadLocal } from './lib/persist';
 import { decodeShare } from './lib/shareUrl';
@@ -41,6 +42,7 @@ function Autosave() {
 function Shell() {
   const { presenting } = useViewport();
   const { playing } = usePlaythrough();
+  usePresentFit();
   const inert = presenting || playing;
   const cls = ['app', inert && 'presenting', playing && 'playing'].filter(Boolean).join(' ');
   return (
