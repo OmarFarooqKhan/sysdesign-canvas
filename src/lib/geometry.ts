@@ -1,4 +1,4 @@
-import type { EdgeMode, GraphNode } from '../types';
+import type { GraphNode } from '../types';
 
 export const NODE_W = 96;
 export const NODE_H = 64;
@@ -66,34 +66,4 @@ export function perpUnit(x1: number, y1: number, x2: number, y2: number) {
   // `|| 0` normalizes away -0 (e.g. when dy is 0), which would otherwise
   // compare unequal to a plain 0 in strict/deep-equality assertions.
   return { x: (-dy / len) || 0, y: (dx / len) || 0 };
-}
-
-/** SVG path between two points for the given edge mode, bowed by `bend`
- *  (a signed offset applied at the path's midpoint). Control points extend
- *  along whichever axis dominates the direction between the two points, so
- *  vertical anchor pairs (top/bottom) route as sensibly as horizontal ones. */
-export function edgePath(mode: EdgeMode, x1: number, y1: number, x2: number, y2: number, bend = 0): string {
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  if (mode === 'ortho') {
-    if (Math.abs(dx) >= Math.abs(dy)) {
-      const mx = (x1 + x2) / 2 + bend;
-      return `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
-    }
-    const my = (y1 + y2) / 2 + bend;
-    return `M ${x1} ${y1} L ${x1} ${my} L ${x2} ${my} L ${x2} ${y2}`;
-  }
-  const p = perpUnit(x1, y1, x2, y2);
-  const bx = p.x * bend;
-  const by = p.y * bend;
-  if (Math.abs(dx) >= Math.abs(dy)) {
-    // Signed, not abs: pulls each control point toward the other endpoint. An
-    // unsigned extension pushes both outward when the target is behind the
-    // source (dx < 0), flipping the arrival tangent so the arrowhead faces away.
-    const ext = dx / 2 + Math.sign(dx || 1) * 20;
-    return `M ${x1} ${y1} C ${x1 + ext + bx} ${y1 + by}, ${x2 - ext + bx} ${y2 + by}, ${x2} ${y2}`;
-  }
-  // dy is never 0 here (this branch only runs when |dy| > |dx|), so no `|| 1` fallback.
-  const ext = dy / 2 + Math.sign(dy) * 20;
-  return `M ${x1} ${y1} C ${x1 + bx} ${y1 + ext + by}, ${x2 + bx} ${y2 - ext + by}, ${x2} ${y2}`;
 }

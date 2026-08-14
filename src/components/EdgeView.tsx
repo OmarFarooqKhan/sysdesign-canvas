@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import type { Edge, EdgeMode, GraphNode } from '../types';
 import { useGraph } from '../store/GraphContext';
 import { usePointerDrag } from '../hooks/usePointerDrag';
-import { edgeEndpoints, edgePath, insetEndpoints } from '../lib/geometry';
+import { edgeEndpoints, insetEndpoints } from '../lib/geometry';
+import { edgePath } from '../lib/edgePath';
 import { bendDelta, bowEndpoints, edgeMidpoint } from '../lib/edgeBend';
 
 const DRAG_THRESHOLD = 4;
