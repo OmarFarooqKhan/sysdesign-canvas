@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { GraphProvider } from '../../store/GraphContext';
@@ -179,38 +179,6 @@ describe('Toolbar', () => {
     expect(exportPngMock).not.toHaveBeenCalled();
   });
 
-  it('import button click opens the hidden file input', async () => {
-    const user = userEvent.setup();
-    const { container } = renderHarness();
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-    const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => {});
-    await user.click(screen.getByRole('button', { name: 'Import' }));
-    expect(clickSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('import parses a valid file and loads it', async () => {
-    const user = userEvent.setup();
-    const { container } = renderHarness();
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-    const data = { edgeMode: 'ortho', nodes: [], edges: [], regions: [] };
-    const file = new File([JSON.stringify(data)], 'x.json', { type: 'application/json' });
-    await user.upload(input, file);
-    await waitFor(() => expect(screen.getByTestId('edge-mode')).toHaveTextContent('ortho'));
-    expect(screen.getByTestId('node-count')).toHaveTextContent('0');
-  });
-
-  it('import shows a custom alert dialog on malformed JSON, dismissible via OK', async () => {
-    const user = userEvent.setup();
-    const { container } = renderHarness();
-    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(['not json'], 'bad.json', { type: 'application/json' });
-    await user.upload(input, file);
-    await waitFor(() => expect(document.querySelector('.alert-modal')).toBeInTheDocument());
-    expect(screen.getByText(/^Could not import:/)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'OK' }));
-    expect(document.querySelector('.alert-modal')).not.toBeInTheDocument();
-  });
-
   it('clear: confirming OK empties the canvas', async () => {
     const user = userEvent.setup();
     renderHarness();
@@ -249,13 +217,6 @@ describe('Toolbar', () => {
     await user.click(screen.getByText('seed-node'));
     await user.selectOptions(screen.getByLabelText('Templates'), '');
     expect(screen.getByTestId('node-count')).toHaveTextContent('1');
-  });
-
-  it('an import with no file selected is a no-op', () => {
-    renderHarness();
-    const input = document.querySelector('input[type=file]') as HTMLInputElement;
-    fireEvent.change(input, { target: { files: [] } });
-    expect(screen.getByTestId('node-count')).toHaveTextContent('0');
   });
 
   it('Fit is a no-op on an empty canvas', async () => {

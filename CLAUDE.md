@@ -84,6 +84,7 @@ sysdesign-canvas/
 │   │   ├── EmptyState.tsx
 │   │   ├── Guides.tsx           # alignment-guide lines for an in-progress node drag
 │   │   ├── Icon.tsx
+│   │   ├── ImportButton.tsx     # toolbar entry point for importing a diagram from a JSON file
 │   │   ├── LibraryButton.tsx    # toolbar entry point for the named diagram library
 │   │   ├── LibraryDialog.tsx    # named save/load/delete modal
 │   │   ├── LibraryRow.tsx       # one row of LibraryDialog's save list

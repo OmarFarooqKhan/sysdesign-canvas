@@ -12,7 +12,7 @@ export function LibraryButton({ disabled }: { disabled?: boolean }) {
 
   return (
     <>
-      <button className="group-start" disabled={disabled} onClick={() => setOpen(true)}>Diagrams…</button>
+      <button disabled={disabled} title="Save or load a named diagram" onClick={() => setOpen(true)}>Diagrams…</button>
       {open && (
         <LibraryDialog
           state={state}
